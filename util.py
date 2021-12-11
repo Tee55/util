@@ -4,8 +4,6 @@ from tkinter import *
 import zipfile
 import shutil
 
-tk = Tk()
-
 image_ext = ('.jpg', 'png')
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
@@ -17,6 +15,7 @@ class formatUtil:
                 return component
 
     def main(self):
+        
         fullPath = filedialog.askdirectory()
         print("Select dir path: {}".format(fullPath))
         
@@ -36,14 +35,15 @@ class formatUtil:
                 if file.endswith(image_ext):
                     fullPath = os.path.join(root, file)
                     dirPath = os.path.split(fullPath)[0]
-                    contentDir, content = os.path.split(dirPath)
+                    arthurDir, content = os.path.split(dirPath)
                     
                     if content not in content_list:
-                        components = contentDir.split(os.sep)
+                        components = arthurDir.split(os.sep)
                         arthur = self.get_arthur(components)
                         
                         content_list.append(content)
-                        zipPath = os.path.join(contentDir, content + ".cbz")
+                        
+                        zipPath = os.path.join(arthurDir, content + ".cbz")
                         zipobj = zipfile.ZipFile(zipPath, "w")
                         print("Create zip file: {}".format(zipPath))
                         
@@ -55,11 +55,28 @@ class formatUtil:
                         print("Move zipfile to: {}".format(movePath))
                         shutil.move(zipPath, movePath)
                 elif file.endswith(zip_ext):
+                    fullPath = os.path.join(root, file)
+                    dirPath = os.path.split(fullPath)[0]
+                    arthurDir, content = os.path.split(dirPath)
+                    
+                    if content not in content_list:
+                        components = arthurDir.split(os.sep)
+                        arthur = self.get_arthur(components)
+                        
+                        content_list.append(content)
+                        
+                        name = os.path.split(file)[0]
+                        srcPath = os.path.join(dirPath, name + ".cbz")
+                        os.rename(fullPath, srcPath)
+                        
+                        movePath = os.path.join(destPath, arthur)
+                        print("Move zipfile to: {}".format(movePath))
+                        shutil.move(srcPath, movePath)
         
-        tk.destroy()
-    
-
+        
 if __name__ == '__main__':
+    tk = Tk()
     formatutil = formatUtil()
     formatUtil.main()
+    tk.destroy()
     
