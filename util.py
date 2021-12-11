@@ -36,7 +36,7 @@ class formatUtil:
             if not os.path.exists(os.path.join(destPath, arthur)):
                 os.makedirs(os.path.join(destPath, arthur))
             if fullPath.endswith(image_ext):
-                dirPath = os.path.split(fullPath)[0]
+                dirPath = os.path.dirname(fullPath)
                 arthurDir, content = os.path.split(dirPath)
                 
                 if content not in content_list:
@@ -59,7 +59,7 @@ class formatUtil:
             elif zipfile.is_zipfile(fullPath):
                 print("Found zip file: {}".format(fullPath))
                 
-                dirPath = os.path.split(fullPath)[0]
+                dirPath = os.path.dirname(fullPath)
                 arthurDir, content = os.path.split(dirPath)
                 
                 name = os.path.splitext(os.path.basename(fullPath))[0]
