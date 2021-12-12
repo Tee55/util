@@ -9,13 +9,13 @@ image_ext = ('.jpg', 'png')
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
 
-class formatUtil:
+class organizeUtil:
 
     def main(self):
         
         tk = Tk()
-        fullPath = filedialog.askdirectory()
-        print("Select source dir path: {}".format(fullPath))
+        srcPath = filedialog.askdirectory()
+        print("Select source dir path: {}".format(srcPath))
         
         destPath = filedialog.askdirectory()
         print("Select destination dir path: {}".format(destPath))
@@ -25,7 +25,7 @@ class formatUtil:
         
         filelist = []
         arthurList = []
-        for root, dirs, files in os.walk(fullPath):
+        for root, dirs, files in os.walk(srcPath):
             for file in files:
                 filelist.append(os.path.join(root,file))
                 components = root.split(os.sep)
@@ -79,6 +79,6 @@ class formatUtil:
         
         
 if __name__ == '__main__':
-    formatutil = formatUtil()
+    formatutil = organizeUtil()
     formatutil.main()
     
