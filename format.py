@@ -11,15 +11,19 @@ class formatterUtil:
     def get_arthur(self, filename):
         title = os.path.splitext(filename)[0]
         
-        start = 0
-        end = 0
+        start = None
+        end = None
         for i, char in enumerate(title):
             if char == "[":
                 start = i+1
             elif char == "]":
                 end = i
+            
+            if start and end:
+                break
         
         arthur = title[start:end]
+        arthur = arthur.strip()
         return arthur
         
     def main(self):
@@ -37,6 +41,10 @@ class formatterUtil:
                 if arthur:
                     filelist.append(os.path.join(root, file))
                     arthurList.append(arthur)
+                    
+            for dir in dirs:
+                if len(os.listdir(os.path.join(root, dir))) == 0:
+                    os.rmdir(os.path.join(root, dir))
                 
         bar = Bar('Processing', max=len(filelist))
         for fullPath, arthur in zip(filelist, arthurList):
