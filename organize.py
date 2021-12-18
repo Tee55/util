@@ -20,9 +20,7 @@ class organizeUtil:
         destPath = filedialog.askdirectory()
         print("Select destination dir path: {}".format(destPath))
         tk.destroy()
-    
-        content_list = []
-        
+      
         filelist = []
         arthurList = []
         for root, dirs, files in os.walk(srcPath):
@@ -31,6 +29,7 @@ class organizeUtil:
                 components = root.split(os.sep)
                 arthurList.append(components[1])
         
+        content_list = []
         bar = Bar('Processing', max=len(filelist))
         for fullPath, arthur in zip(filelist, arthurList):
             if not os.path.exists(os.path.join(destPath, arthur)):
