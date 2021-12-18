@@ -18,33 +18,25 @@ def main():
     print("Select dir path you want to update: {}".format(destPath))
     tk.destroy()
     
-    for root, dirs, files in os.walk(srcPath):
-        for file in files:
-            if file.endswith(zip_ext):
-                new_file = formatterutil.cleanFileName(file)
-                name, ext = os.path.splitext(new_file)
-                os.rename(os.path.join(root, file), os.path.join(root, name + ".cbz"))
-    
-    '''
+    formatterutil.clean(srcPath)
+                
     src_filelist = []
     src_arthurList = []
     for root, dirs, files in os.walk(srcPath):
         for file in files:
             if file.endswith(zip_ext):
-                arthur = formatterutil.get_arthur(file)
+                arthur,_ = formatterutil.get_arthur(file)
                 if arthur:
                     src_filelist.append(os.path.join(root, file))
                     src_arthurList.append(arthur)
                     
     dest_filelist = []
-    dest_arthurList = []
     for root, dirs, files in os.walk(destPath):
         for file in files:
             if file.endswith(zip_ext):
-                arthur = formatterutil.get_arthur(file)
+                arthur,_ = formatterutil.get_arthur(file)
                 if arthur:
                     dest_filelist.append(os.path.join(root, file))
-                    dest_arthurList.append(arthur)
     
     bar = Bar('Processing', max=len(src_filelist)) 
     for fullPath, arthur in zip(src_filelist, src_arthurList):
@@ -57,9 +49,6 @@ def main():
                 print("Move zipfile to: {}".format(movePath))
                 shutil.move(fullPath, movePath)
             bar.next()
-    '''
-    
-    
 
 if __name__ == '__main__':
     main()
