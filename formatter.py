@@ -63,7 +63,8 @@ class formatterUtil:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
                 new_arthur = self.cleanName(arthur)
-                os.rename(os.path.join(srcPath, arthur), os.path.join(srcPath, new_arthur))
+                if not os.path.exists(os.path.join(srcPath, new_arthur)):
+                    os.rename(os.path.join(srcPath, arthur), os.path.join(srcPath, new_arthur))
             
         for root, dirs, files in os.walk(srcPath):
             for file in files:
