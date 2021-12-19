@@ -1,11 +1,14 @@
 import os
-from tkinter import filedialog
-from tkinter import *
 import shutil
 from progress.bar import Bar
 import re
 import datetime
 from werkzeug.utils import secure_filename
+try:
+    from tkinter import filedialog
+    from tkinter import *
+except:
+    pass
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
