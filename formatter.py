@@ -26,6 +26,8 @@ class formatterUtil:
     
     def get_arthur_name_ext(self, fullPath):
         filename, ext = os.path.splitext(os.path.basename(fullPath))
+        start = None
+        end = None
         for i, char in enumerate(filename):
             if char == "[":
                 start = i+1
