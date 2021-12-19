@@ -58,6 +58,13 @@ class formatterUtil:
     
     def clean(self, srcPath):
         
+        for arthur in os.listdir(srcPath):
+            if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
+                os.rmdir(os.path.join(srcPath, arthur))
+            else:
+                new_arthur = self.cleanName(arthur)
+                os.rename(os.path.join(srcPath, arthur), os.path.join(srcPath, new_arthur))
+            
         for root, dirs, files in os.walk(srcPath):
             for file in files:
                 arthur, name, ext = self.get_arthur_name_ext(os.path.join(root, file))
@@ -69,16 +76,7 @@ class formatterUtil:
                 else:
                     if not os.path.exists(os.path.join(root, new_name + ext)):
                         os.rename(os.path.join(root, file), os.path.join(root, new_name + ext))
-                        
-            for dir in dirs:
-                if len(os.listdir(os.path.join(root, dir))) == 0:
-                    os.rmdir(os.path.join(root, dir))
-                else:
-                    new_dir = self.cleanName(dir)
-                    if not os.path.exists(os.path.join(root, new_dir)):
-                        os.rename(os.path.join(root, dir), os.path.join(root, new_dir))
-                    
-                    
+ 
     def main(self):
         
         tk = Tk()
