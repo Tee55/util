@@ -69,10 +69,10 @@ class formatterUtil:
                         os.rename(os.path.join(root, file), os.path.join(root, new_name + ext))
                         
             for dir in dirs:
-                new_dir = self.cleanName(dir)
                 if len(os.listdir(os.path.join(root, dir))) == 0:
                     os.rmdir(os.path.join(root, dir))
                 else:
+                    new_dir = self.cleanName(dir)
                     if not os.path.exists(os.path.join(root, new_dir)):
                         os.rename(os.path.join(root, dir), os.path.join(root, new_dir))
                     
