@@ -11,46 +11,18 @@ zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
 class formatterUtil:
     
-    def cleanFileName(self, filename):
-        arthur_input, name_input = self.get_arthur(filename)
-        
-        if arthur_input and name_input:
-            arthur_output = secure_filename(arthur_input)
-            name_output = secure_filename(name_input)
-            
-            if not re.search('[a-zA-Z]', arthur_output):
-                basename = "unknown"
-                suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-                arthur_output = "_".join([basename, suffix])
-            if not re.search('[a-zA-Z]', name_output):
-                basename = "reader"
-                suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-                name_output = "_".join([basename, suffix])
-                
-            arthur_output = arthur_output.lower()
-            name_output = name_output.lower()
-                
-            name_output = "[" + arthur_output + "] " + name_output
-            return name_output
-        else:
-            return None
+    def cleanName(self, name):
+        name = name.strip()
+        name_output = secure_filename(name)
+        if not re.search('[a-zA-Z]', name_output):
+            basename = "unknown"
+            suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+            name_output = "_".join([basename, suffix])
+        name_output = name_output.lower()
+        return name_output
     
-    def cleanDirName(self, dirname):
-        dirname_output = secure_filename(dirname)
-        
-        if dirname_output:
-            if not re.search('[a-zA-Z]', dirname_output):
-                basename = "unknown"
-                suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-                dirname_output = "_".join([basename, suffix])
-            dirname_output = dirname_output.lower()
-            return dirname_output
-        else:
-            return None
-    
-    def get_arthur(self, filename):
-        start = None
-        end = None
+    def get_arthur_name_ext(self, fullPath):
+        filename, ext = os.path.splitext(os.path.basename(fullPath))
         for i, char in enumerate(filename):
             if char == "[":
                 start = i+1
@@ -58,40 +30,43 @@ class formatterUtil:
                 end = i
             
             if start and end:
-                break
-        
-        if start and end:
-            arthur = filename[start:end]
-            arthur = arthur.strip()
-            
-            name = filename[end+1:]
-            name = name.strip()
-            return arthur, name
+                arthur = filename[start:end]
+                name = filename[end+1:]
+                
+                arthur_output = self.cleanName(arthur)
+                name_output = self.cleanName(name)
+                
+                ext_output = ext.lower()
+                
+                return arthur_output, name_output, ext_output
         else:
-            return None, None
+            components = fullPath.split(os.sep)
+            arthur = components[1]
+            arthur_output = self.cleanName(arthur)
+            
+            name = filename
+            name_output = self.cleanName(name)
+            
+            ext_output = ext.lower()
+            return arthur_output, name_output, ext_output
         
     
     def clean(self, srcPath):
         
         for root, dirs, files in os.walk(srcPath):
             for file in files:
-                new_file = self.cleanFileName(file)
-                if not new_file:
-                    components = root.split(os.sep)
-                    arthur = components[1]
-                    input_file = "[" + arthur + "] " + file 
-                    new_file = self.cleanFileName(input_file)
+                arthur, name, ext = self.get_arthur_name_ext(os.path.join(root, file))
+                new_name = "[" + arthur + "] " + name
                     
                 if file.endswith(zip_ext):
-                    name, ext = os.path.splitext(new_file)
-                    if not os.path.exists(os.path.join(root, name + ".cbz")):
-                        os.rename(os.path.join(root, file), os.path.join(root, name + ".cbz"))
+                    if not os.path.exists(os.path.join(root, new_name + ".cbz")):
+                        os.rename(os.path.join(root, file), os.path.join(root, new_name + ".cbz"))
                 else:
-                    if not os.path.exists(os.path.join(root, new_file)):
-                        os.rename(os.path.join(root, file), os.path.join(root, new_file))
+                    if not os.path.exists(os.path.join(root, new_name + ext)):
+                        os.rename(os.path.join(root, file), os.path.join(root, new_name + ext))
                         
             for dir in dirs:
-                new_dir = self.cleanDirName(dir)
+                new_dir = self.cleanName(dir)
                 if len(os.listdir(os.path.join(root, dir))) == 0:
                     os.rmdir(os.path.join(root, dir))
                 else:
@@ -113,7 +88,7 @@ class formatterUtil:
         for root, dirs, files in os.walk(srcPath):
             for file in files:
                 if file.endswith(zip_ext):
-                    arthur,_ = self.get_arthur(file)
+                    arthur, name, ext = self.get_arthur_name_ext(os.path.join(root, file))
                     if arthur:
                         filelist.append(os.path.join(root, file))
                         arthurList.append(arthur)

@@ -25,7 +25,7 @@ def main():
     for root, dirs, files in os.walk(srcPath):
         for file in files:
             if file.endswith(zip_ext):
-                arthur,_ = formatterutil.get_arthur(file)
+                arthur, name, ext = formatterutil.get_arthur_name_ext(os.path.join(root, file))
                 if arthur:
                     src_filelist.append(os.path.join(root, file))
                     src_arthurList.append(arthur)
@@ -34,7 +34,7 @@ def main():
     for root, dirs, files in os.walk(destPath):
         for file in files:
             if file.endswith(zip_ext):
-                arthur,_ = formatterutil.get_arthur(file)
+                arthur, name, ext = formatterutil.get_arthur_name_ext(os.path.join(root, file))
                 if arthur:
                     dest_filelist.append(os.path.join(root, file))
     
