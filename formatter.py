@@ -50,6 +50,27 @@ class Formatter:
                 self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
             bar.next()
         bar.finish()
+        
+    def sep_arthur_name(self, name):
+        start = None
+        end = None
+        for i, char in enumerate(name):
+            if char == "[":
+                start = i+1
+            elif char == "]":
+                end = i
+
+            if start and end:
+                arthur = name[start:end]
+                name = name[end+1:]
+
+                arthur_output = formatter.cleanName(arthur)
+                name_output = formatter.cleanName(name)
+
+                return arthur_output, name_output
+
+        name_output = formatter.cleanName(name)
+        return None, name_output
 
     def cleanRecur(self, arthur, fullPath):
         for fileDir in os.listdir(fullPath):
@@ -60,13 +81,15 @@ class Formatter:
                     self.cleanRecur(arthur, os.path.join(fullPath, fileDir))
             else:
                 name, ext = os.path.splitext(fileDir)
-                new_name = self.cleanName(name)
+                file_arthur, new_name = self.sep_arthur_name(name)
 
                 if ext.endswith(zip_ext):
                     ext = ".cbz"
-
-                new_fileDir = "[" + arthur + "] " + new_name + ext
-                if fileDir != new_fileDir:
+                
+                new_name = "[" + arthur + "] " + new_name
+                    
+                if name != new_name:
+                    new_fileDir = new_name + ext
                     if not os.path.exists(os.path.join(fullPath, new_fileDir)):
                         os.rename(os.path.join(fullPath, fileDir),
                                   os.path.join(fullPath, new_fileDir))
@@ -74,7 +97,7 @@ class Formatter:
                         suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
                         time.sleep(1)
                         new_name = "_".join([new_name, suffix])
-                        new_fileDir = "[" + arthur + "] " + new_name + ext
+                        new_fileDir = new_name + ext
                         os.rename(os.path.join(fullPath, fileDir),
                                   os.path.join(fullPath, new_fileDir))
 

@@ -9,32 +9,10 @@ import datetime
 
 formatter = Formatter()
 
-
 class Updater:
 
     def __init__(self):
         pass
-
-    def sep_arthur_name(self, name):
-        start = None
-        end = None
-        for i, char in enumerate(name):
-            if char == "[":
-                start = i+1
-            elif char == "]":
-                end = i
-
-            if start and end:
-                arthur = name[start:end]
-                name = name[end+1:]
-
-                arthur_output = formatter.cleanName(arthur)
-                name_output = formatter.cleanName(name)
-
-                return arthur_output, name_output
-
-        name_output = formatter.cleanName(name)
-        return None, name_output
 
     def get_all_files_arthurs(self, srcPath):
         src_filelist = []
@@ -42,7 +20,7 @@ class Updater:
         for root, dirs, files in os.walk(srcPath):
             for filename in files:
                 name, ext = os.path.splitext(filename)
-                arthur, new_name = self.sep_arthur_name(name)
+                arthur, new_name = formatter.sep_arthur_name(name)
                 new_filename = "[" + arthur + "] " + new_name + ext
                 if not arthur:
                     components = root.split(os.sep)
