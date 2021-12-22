@@ -1,9 +1,9 @@
 import os
-import shutil
 from progress.bar import Bar
 import re
 import datetime
 from werkzeug.utils import secure_filename
+import time
 try:
     from tkinter import filedialog
     from tkinter import *
@@ -12,7 +12,10 @@ except:
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
-class formatterUtil:
+class Formatter:
+    
+    def __init__(self):
+        pass
     
     def cleanName(self, name):
         name = name.strip()
@@ -20,101 +23,63 @@ class formatterUtil:
         if not re.search('[a-zA-Z]', name_output):
             basename = "unknown"
             suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+            time.sleep(1)
             name_output = "_".join([basename, suffix])
         name_output = name_output.lower()
         return name_output
     
-    def get_arthur_name_ext(self, fullPath):
-        filename, ext = os.path.splitext(os.path.basename(fullPath))
-        start = None
-        end = None
-        for i, char in enumerate(filename):
-            if char == "[":
-                start = i+1
-            elif char == "]":
-                end = i
-            
-            if start and end:
-                arthur = filename[start:end]
-                name = filename[end+1:]
-                
-                arthur_output = self.cleanName(arthur)
-                name_output = self.cleanName(name)
-                
-                ext_output = ext.lower()
-                
-                return arthur_output, name_output, ext_output
-        else:
-            components = fullPath.split(os.sep)
-            arthur = components[1]
-            arthur_output = self.cleanName(arthur)
-            
-            name = filename
-            name_output = self.cleanName(name)
-            
-            ext_output = ext.lower()
-            return arthur_output, name_output, ext_output
-        
-    
     def clean(self, srcPath):
         
+        bar = Bar('Processing', max=len(os.listdir(srcPath)))
         for arthur in os.listdir(srcPath):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
                 new_arthur = self.cleanName(arthur)
-                if not os.path.exists(os.path.join(srcPath, new_arthur)):
-                    os.rename(os.path.join(srcPath, arthur), os.path.join(srcPath, new_arthur))
-            
-        for root, dirs, files in os.walk(srcPath):
-            for file in files:
-                arthur, name, ext = self.get_arthur_name_ext(os.path.join(root, file))
-                new_name = "[" + arthur + "] " + name
-                    
-                if file.endswith(zip_ext):
-                    if not os.path.exists(os.path.join(root, new_name + ".cbz")):
-                        os.rename(os.path.join(root, file), os.path.join(root, new_name + ".cbz"))
-                else:
-                    if not os.path.exists(os.path.join(root, new_name + ext)):
-                        os.rename(os.path.join(root, file), os.path.join(root, new_name + ext))
- 
-    def main(self):
-        
-        tk = Tk()
-        srcPath = filedialog.askdirectory()
-        print("Select source dir path: {}".format(srcPath))
-        tk.destroy()
-        
-        self.clean(srcPath)
-        
-        filelist = []
-        arthurList = []
-        for root, dirs, files in os.walk(srcPath):
-            for file in files:
-                if file.endswith(zip_ext):
-                    arthur, name, ext = self.get_arthur_name_ext(os.path.join(root, file))
-                    if arthur:
-                        filelist.append(os.path.join(root, file))
-                        arthurList.append(arthur)
-                    
-            for dir in dirs:
-                if len(os.listdir(os.path.join(root, dir))) == 0:
-                    os.rmdir(os.path.join(root, dir))
-                
-        bar = Bar('Processing', max=len(filelist))
-        for fullPath, arthur in zip(filelist, arthurList):
-            if not os.path.exists(os.path.join(srcPath, arthur)):
-                os.makedirs(os.path.join(srcPath, arthur))
-            basename = os.path.basename(fullPath)
-            movePath = os.path.join(srcPath, arthur, basename)
-            if not os.path.exists(movePath):
-                print("Move zipfile to: {}".format(movePath))
-                shutil.move(fullPath, movePath)
+                if arthur != new_arthur:
+                    if not os.path.exists(os.path.join(srcPath, new_arthur)):
+                        os.rename(os.path.join(srcPath, arthur), os.path.join(srcPath, new_arthur))
+                    else:
+                        suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+                        time.sleep(1)
+                        new_arthur = "_".join([new_arthur, suffix])
+                        os.rename(os.path.join(srcPath, arthur), os.path.join(srcPath, new_arthur))     
+                self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
             bar.next()
-            
+        bar.finish()
+    
+    def cleanRecur(self, arthur, fullPath):
+        for fileDir in os.listdir(fullPath):
+            if os.path.isdir(os.path.join(fullPath, fileDir)):
+                if len(os.listdir(os.path.join(fullPath, fileDir))) == 0:
+                    os.rmdir(os.path.join(fullPath, fileDir))
+                else:
+                    self.cleanRecur(arthur, os.path.join(fullPath, fileDir))
+            else:
+                name, ext = os.path.splitext(fileDir)
+                new_name = self.cleanName(name)
                 
+                if ext.endswith(zip_ext):
+                    ext = ".cbz"
+                
+                new_fileDir = "[" + arthur + "] " + new_name + ext
+                if fileDir != new_fileDir:
+                    if not os.path.exists(os.path.join(fullPath, new_fileDir)):
+                        os.rename(os.path.join(fullPath, fileDir), os.path.join(fullPath, new_fileDir))
+                    else:
+                        suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+                        time.sleep(1)
+                        new_fileDir = "_".join([new_fileDir, suffix])
+                        os.rename(os.path.join(fullPath, fileDir), os.path.join(fullPath, new_fileDir))
+                               
 if __name__ == '__main__':
-    formatterutil = formatterUtil()
-    formatterutil.main()
+    
+    tk = Tk()
+    srcPath = filedialog.askdirectory()
+    print("Select source dir path: {}".format(srcPath))
+    tk.destroy()
+    
+    formatter = Formatter()
+    formatter.clean(srcPath)
     
         
