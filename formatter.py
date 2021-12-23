@@ -96,7 +96,10 @@ class Formatter:
                     suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
                     time.sleep(1)
                     new_name = "_".join([new_name, suffix])
-                    new_fileDir = new_name + ext
+                    if ext:
+                        new_fileDir = new_name + ext
+                    else:
+                        new_fileDir = new_name
                     os.rename(os.path.join(arthur_path, fileDir),
                                 os.path.join(arthur_path, new_fileDir))
             else:
