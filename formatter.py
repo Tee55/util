@@ -12,11 +12,7 @@ except:
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
-
 class Formatter:
-
-    def __init__(self):
-        pass
 
     def cleanName(self, name):
         name = name.strip()
@@ -64,12 +60,12 @@ class Formatter:
                 arthur = name[start:end]
                 name = name[end+1:]
 
-                arthur_output = formatter.cleanName(arthur)
-                name_output = formatter.cleanName(name)
+                arthur_output = self.cleanName(arthur)
+                name_output = self.cleanName(name)
 
                 return arthur_output, name_output
 
-        name_output = formatter.cleanName(name)
+        name_output = self.cleanName(name)
         return None, name_output
 
     def cleanRecur(self, arthur, arthur_path):
