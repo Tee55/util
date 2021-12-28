@@ -85,7 +85,7 @@ class Formatter:
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-                if not os.path.exists(os.path.join(arthur_path, new_fileDir)):
+                if new_fileDir not in os.listdir(arthur_path):
                     os.rename(os.path.join(arthur_path, fileDir),
                                 os.path.join(arthur_path, new_fileDir))
                 else:

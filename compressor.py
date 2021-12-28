@@ -30,7 +30,7 @@ class Compressor:
         for fullPath in filelist:
             components = fullPath.split(os.sep)
             arthur = components[1]
-            if not os.path.exists(os.path.join(srcPath, arthur)):
+            if arthur not in os.listdir(srcPath):
                 os.makedirs(os.path.join(srcPath, arthur))
 
             filename = os.path.basename(fullPath)
