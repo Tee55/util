@@ -34,7 +34,7 @@ class Formatter:
             else:
                 new_arthur = self.cleanName(arthur)
                 if arthur != new_arthur:
-                    if not os.path.exists(os.path.join(srcPath, new_arthur)):
+                    if new_arthur not in os.listdir(srcPath):
                         os.rename(os.path.join(srcPath, arthur),
                                   os.path.join(srcPath, new_arthur))
                     else:
