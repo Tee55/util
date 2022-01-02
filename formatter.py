@@ -17,7 +17,7 @@ class Formatter:
     def cleanName(self, name):
         name = name.strip()
         name_output = secure_filename(name)
-        if not re.search('[a-zA-Z]', name_output):
+        if not re.search('[a-zA-Z0-9]', name_output):
             basename = "unknown"
             suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
             time.sleep(1)
