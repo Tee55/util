@@ -33,6 +33,10 @@ class Formatter:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
                 new_arthur = self.cleanName(arthur)
+                
+                new_arthur = new_arthur.replace("_", " ")
+                new_arthur = " ".join(new_arthur.split())
+                
                 if arthur != new_arthur:
                     if new_arthur not in os.listdir(srcPath):
                         os.rename(os.path.join(srcPath, arthur),
@@ -78,7 +82,14 @@ class Formatter:
                 if ext.endswith(zip_ext):
                     ext = ".cbz"
             fileDir_arthur, new_name = self.sep_arthur_name(name)
+            
+            if arthur in new_name:
+                new_name = new_name.replace(arthur, "")
+                
             new_name = "[" + arthur + "] " + new_name
+            
+            new_name = new_name.replace("_", " ")
+            new_name = " ".join(new_name.split())
                 
             if name != new_name:
                 if ext:
