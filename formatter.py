@@ -2,7 +2,7 @@ import os
 from progress.bar import Bar
 import re
 import datetime
-from werkzeug.utils import secure_filename
+from slugify import slugify
 import time
 try:
     from tkinter import filedialog
@@ -15,14 +15,20 @@ zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 class Formatter:
 
     def cleanName(self, name):
+        
+        # Remove head and tail whitespaces
         name = name.strip()
-        name_output = secure_filename(name)
-        if not re.search('[a-zA-Z0-9]', name_output):
+        
+        name_output = slugify(name, separator=" ")
+        if name_output == "":
             basename = "unknown"
             suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
             time.sleep(1)
             name_output = "_".join([basename, suffix])
         name_output = name_output.lower()
+        
+        # Combine multiple whitespaces to one
+        name_output = " ".join(name_output.split())
         return name_output
 
     def clean(self, srcPath):
@@ -33,10 +39,7 @@ class Formatter:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
                 new_arthur = self.cleanName(arthur)
-                
-                new_arthur = new_arthur.replace("_", " ")
-                new_arthur = " ".join(new_arthur.split())
-                
+       
                 if arthur != new_arthur:
                     if new_arthur not in os.listdir(srcPath):
                         os.rename(os.path.join(srcPath, arthur),
@@ -82,15 +85,7 @@ class Formatter:
                 if ext.endswith(zip_ext):
                     ext = ".cbz"
             fileDir_arthur, new_name = self.sep_arthur_name(name)
-            
-            if arthur in new_name:
-                new_name = new_name.replace(arthur, "")
-                
             new_name = "[" + arthur + "] " + new_name
-            
-            new_name = new_name.replace("_", " ")
-            new_name = " ".join(new_name.split())
-                
             if name != new_name:
                 if ext:
                     new_fileDir = new_name + ext
