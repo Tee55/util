@@ -22,9 +22,9 @@ class Formatter:
         name_output = slugify(name, separator=" ")
         if name_output == "":
             basename = "unknown"
-            suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+            suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
-            name_output = "_".join([basename, suffix])
+            name_output = " ".join([basename, suffix])
         name_output = name_output.lower()
         
         # Combine multiple whitespaces to one
