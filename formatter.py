@@ -84,18 +84,17 @@ class Formatter:
             if isChapter:
                 num_list = re.findall(r'\d+', new_name)
                 if num_list != []:
-                    chap_num = num_list[0]
-            
-            remove_list = ["chapter", "english", "digital"]
-            for word in remove_list:
-                new_name = new_name.split(word, 1)[0]
-            new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
-            new_name = " ".join(new_name.split())
-            
-            if isChapter:
-                new_name = " ".join([new_name, chap_num])
-                
-            new_name = "[" + arthur + "] " + new_name
+                    dirName = os.path.basename(arthur_path)
+                    new_name = " ".join([dirName, num_list[0]])
+                else:
+                    new_name = "[" + arthur + "] " + new_name
+            else:
+                remove_list = ["chapter", "english", "digital"]
+                for word in remove_list:
+                    new_name = new_name.split(word, 1)[0]
+                new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
+                new_name = " ".join(new_name.split())
+                new_name = "[" + arthur + "] " + new_name
             if name != new_name:
                 if ext:
                     new_fileDir = new_name + ext
