@@ -4,11 +4,6 @@ import re
 import datetime
 from slugify import slugify
 import time
-try:
-    from tkinter import filedialog
-    from tkinter import *
-except:
-    pass
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 
@@ -75,7 +70,7 @@ class Formatter:
         name_output = self.cleanName(name)
         return None, name_output
 
-    def cleanRecur(self, arthur, arthur_path):
+    def cleanRecur(self, arthur, arthur_path, isChapter=False):
         for fileDir in os.listdir(arthur_path):
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
                 name = fileDir
@@ -85,24 +80,37 @@ class Formatter:
                 if ext.endswith(zip_ext):
                     ext = ".cbz"
             fileDir_arthur, new_name = self.sep_arthur_name(name)
+            
+            if isChapter:
+                num_list = re.findall(r'\d+', new_name)
+                if num_list != []:
+                    chap_num = num_list[0]
+            
+            remove_list = ["chapter", "english", "digital"]
+            for word in remove_list:
+                new_name = new_name.split(word, 1)[0]
+            new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
+            new_name = " ".join(new_name.split())
+            
+            if isChapter:
+                new_name = " ".join([new_name, chap_num])
+                
             new_name = "[" + arthur + "] " + new_name
             if name != new_name:
                 if ext:
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-                if new_fileDir not in os.listdir(arthur_path):
-                    os.rename(os.path.join(arthur_path, fileDir),
-                                os.path.join(arthur_path, new_fileDir))
-                else:
-                    suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+                if os.path.exists(os.path.join(arthur_path, new_fileDir)):
+                    suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                     time.sleep(1)
-                    new_name = "_".join([new_name, suffix])
+                    new_name = " ".join([new_name, suffix])
                     if ext:
                         new_fileDir = new_name + ext
                     else:
                         new_fileDir = new_name
-                    os.rename(os.path.join(arthur_path, fileDir),
+                
+                os.rename(os.path.join(arthur_path, fileDir),
                                 os.path.join(arthur_path, new_fileDir))
             else:
                 new_fileDir = fileDir
@@ -111,14 +119,19 @@ class Formatter:
                 if len(os.listdir(os.path.join(arthur_path, new_fileDir))) == 0:
                     os.rmdir(os.path.join(arthur_path, new_fileDir))
                 else:
-                    self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir))
+                    self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
 
 if __name__ == '__main__':
-
-    tk = Tk()
+    import tkinter as tk
+    from tkinter import filedialog
+    import ctypes
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    
+    root = tk.Tk()
+    root.call('tk', 'scaling', 4.0)
     srcPath = filedialog.askdirectory()
     print("Select source dir path: {}".format(srcPath))
-    tk.destroy()
+    root.destroy()
 
     formatter = Formatter()
     formatter.clean(srcPath)
