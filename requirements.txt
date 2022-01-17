@@ -2,3 +2,4 @@ progress
 flask
 Pillow
 python-slugify
+natsort

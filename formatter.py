@@ -4,8 +4,10 @@ import re
 import datetime
 from slugify import slugify
 import time
+from natsort import natsorted
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
+img_ext = ('.web', '.jpg', '.png')
 
 class Formatter:
 
@@ -50,25 +52,15 @@ class Formatter:
         bar.finish()
         
     def sep_arthur_name(self, name):
-        start = None
-        end = None
-        for i, char in enumerate(name):
-            if char == "[":
-                start = i+1
-            elif char == "]":
-                end = i
-
-            if start and end:
-                arthur = name[start:end]
-                name = name[end+1:]
-
-                arthur_output = self.cleanName(arthur)
-                name_output = self.cleanName(name)
-
-                return arthur_output, name_output
-
-        name_output = self.cleanName(name)
-        return None, name_output
+        arthur = name[name.find("[")+1:name.find("]")]
+        item_name = name[name.find("]")+1:]
+        if arthur != "" and item_name != "":
+            arthur_output = self.cleanName(arthur)
+            item_name = self.cleanName(item_name)
+            return arthur_output, item_name
+        else:
+            name_output = self.cleanName(name)
+            return None, name_output
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
         for fileDir in os.listdir(arthur_path):
@@ -83,11 +75,12 @@ class Formatter:
             
             if isChapter:
                 num_list = re.findall(r'\d+', new_name)
+                dirName = os.path.basename(arthur_path)
                 if num_list != []:
-                    dirName = os.path.basename(arthur_path)
                     new_name = " ".join([dirName, num_list[0]])
                 else:
-                    new_name = "[" + arthur + "] " + new_name
+                    chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(img_ext)]
+                    new_name = " ".join([dirName, chapFileList.index(fileDir)+1])
             else:
                 remove_list = ["chapter", "english", "digital"]
                 for word in remove_list:
