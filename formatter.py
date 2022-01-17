@@ -71,16 +71,20 @@ class Formatter:
                 name, ext = os.path.splitext(fileDir)
                 if ext.endswith(zip_ext):
                     ext = ".cbz"
-            fileDir_arthur, new_name = self.sep_arthur_name(name)
+            _, new_name = self.sep_arthur_name(name)
             
             if isChapter:
-                num_list = re.findall(r'\d+', new_name)
-                dirName = os.path.basename(arthur_path)
-                if num_list != []:
-                    new_name = " ".join([dirName, num_list[0]])
+                if fileDir.lower().endswith(img_ext):
+                    new_name = "[" + arthur + "] " + "thumbnails"
                 else:
-                    chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(img_ext)]
-                    new_name = " ".join([dirName, chapFileList.index(fileDir)+1])
+                    if "chapter" in new_name:
+                        num_list = re.findall(r'\d+', new_name)
+                        dirName = os.path.basename(arthur_path)
+                        if num_list != []:
+                            new_name = " ".join([dirName, num_list[0]])
+                    else:
+                        chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(img_ext)]
+                        new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
             else:
                 remove_list = ["chapter", "english", "digital"]
                 for word in remove_list:
