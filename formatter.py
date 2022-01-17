@@ -77,9 +77,9 @@ class Formatter:
                 if fileDir.lower().endswith(img_ext):
                     new_name = "[" + arthur + "] " + "thumbnails"
                 else:
+                    dirName = os.path.basename(arthur_path)
                     if "chapter" in new_name:
-                        num_list = re.findall(r'\d+', new_name)
-                        dirName = os.path.basename(arthur_path)
+                        num_list = re.findall(r'\d+', new_name) 
                         if num_list != []:
                             new_name = " ".join([dirName, num_list[0]])
                     else:
