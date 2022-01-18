@@ -53,6 +53,7 @@ class Formatter:
         
     def sep_arthur_name(self, name):
         arthur = name[name.find("[")+1:name.find("]")]
+        arthur = arthur[arthur.find("(")+1:arthur.find(")")]
         item_name = name[name.find("]")+1:]
         if arthur != "" and item_name != "":
             arthur_output = self.cleanName(arthur)
