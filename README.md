@@ -6,7 +6,7 @@ pip install -r requirements.txt
 ```
 
 ### Compressor
-Find all file in source directory as well as remove empty directory. Create an author folder in source folder by using file's parent directory name -> (if fail) -> From filename itself -> (if fail) -> Author is "unknown". If it is images, then compress to single zip file (with rename as .cbz). If it is zip, rar, cbz, cbr or cbx, then move to author folder.
+Find all file in source directory as well as remove empty directory. Create an author folder in source folder by using file's parent directory name -> (if fail) -> From filename itself -> (if fail) -> Author is "unknown". Rename file (zip, rar, cbz, cbx and cbr only) to format '[author|artist] filename.ext'. If it is images, then compress to single zip file (with rename as .cbz). If it is zip, rar, cbz, cbr or cbx, then move to author folder.
 
 Source Directory Structure
 ```

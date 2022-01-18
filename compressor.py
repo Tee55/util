@@ -5,6 +5,8 @@ import zipfile
 import shutil
 from progress.bar import Bar
 from formatter import Formatter
+from datetime import datetime
+import time
 
 image_ext = ('.jpg', '.png', '.webp')
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr', '.cbx')
@@ -12,6 +14,9 @@ formatter = Formatter()
 
 class Compressor:
 
+    def __init__(self):
+        pass
+    
     def run(self):
 
         tk = Tk()
@@ -29,13 +34,15 @@ class Compressor:
             components = fullPath.split(os.sep)
             arthur = components[1]
             filename = os.path.basename(fullPath)
+            dirPath = os.path.dirname(fullPath)
             name, ext = os.path.splitext(filename)
             
             if arthur == os.path.basename(srcPath):
-                arthur,_ = formatter.sep_arthur_name(name)
+                arthur, new_name = formatter.sep_arthur_name(name)
                 if not arthur:
                     arthur = "unknown"
-                
+            
+            # Create author folder
             if arthur not in os.listdir(srcPath):
                 os.mkdir(os.path.join(srcPath, arthur))
 
@@ -56,7 +63,7 @@ class Compressor:
                     os.rmdir(dirPath)
             elif ext.lower().endswith(zip_ext):
                 # zip, rar, cbz, cbx, cbr
-                movePath = os.path.join(srcPath, arthur, name + ".cbz")
+                movePath = os.path.join(srcPath, arthur, new_name + ".cbz")
                 if not os.path.exists(movePath):
                     print("Move zipfile from {} to {}".format(fullPath, movePath))
                     shutil.move(fullPath, movePath)

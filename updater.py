@@ -47,10 +47,14 @@ class Updater:
         tk = Tk()
         srcPath = filedialog.askdirectory()
         print("Select source dir path: {}".format(srcPath))
-
+            
         destPath = filedialog.askdirectory()
         print("Select dir path you want to update: {}".format(destPath))
         tk.destroy()
+        
+        if os.path.basename(srcPath) not in ["r18", "norm"] or os.path.basename(destPath) not in ["r18", "norm"]:
+            print("Source and Destination folders must be content folder (Please refer to reader project https://github.com/Tee55/reader)")
+            return
 
         src_filelist, src_arthurList = self.get_all_files_arthurs(srcPath)
         dest_filelist, dest_arthurList = self.get_all_files_arthurs(destPath)
