@@ -91,7 +91,7 @@ class Formatter:
                         chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(img_ext)]
                         new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
             else:
-                remove_list = ["chapter", "english", "digital", "fakku", "comic", "comics", "decensored"]
+                remove_list = ["chapter", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
                 for word in remove_list:
                     new_name = new_name.split(word, 1)[0]
                 new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
