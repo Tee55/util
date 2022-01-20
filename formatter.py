@@ -5,9 +5,14 @@ import datetime
 from slugify import slugify
 import time
 from natsort import natsorted
+import zipfile
+import rarfile
+import io
+from PIL import Image
+rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
-img_ext = ('.web', '.jpg', '.png')
+image_ext = ('.jpg', '.png', '.webp', '.jpeg')
 
 class Formatter:
 
@@ -62,6 +67,51 @@ class Formatter:
         else:
             name_output = self.cleanName(name)
             return None, name_output
+        
+    def cleanFile(self, filePath):
+        if zipfile.is_zipfile(filePath):
+            zipObj = zipfile.ZipFile(filePath, 'r')
+        elif rarfile.is_rarfile(filePath):
+            zipObj = rarfile.RarFile(filePath, 'r')
+        else:
+            print("File {} is either zip or rar file".format(filePath))
+            return
+        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve
+        fileList = [x for x in zipObj.namelist() if x.lower().endswith(('.jpg', '.png', '.jpeg')) or x.lower().endswith('/')]
+        if len(fileList) > 0:
+            jpeglist = []
+            for x in zipObj.namelist():
+                if x.lower().endswith('/'):
+                    pass
+                elif x.lower().endswith(image_ext):
+                    jpeglist.append(x)
+            jpeglist = natsorted(jpeglist)
+            zip_filename = os.path.basename(filePath)
+            dirPath = os.path.dirname(filePath)
+            new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
+            
+            try:
+                for jpeg_file in jpeglist:
+                    filename = os.path.basename(jpeg_file)
+                    name, ext = os.path.splitext(filename)
+                    image_pil = Image.open(zipObj.open(jpeg_file))
+                    image_pil = image_pil.convert('RGB')
+                    image_byte = io.BytesIO()
+                    image_pil.save(image_byte, "webp")
+                    new_zipObj.writestr(name + ".webp", image_byte.getvalue())
+                
+            except Exception as e:
+                print(e)
+                
+            zipObj.close()
+            new_zipObj.close()
+            
+            if os.path.exists(filePath):
+                os.remove(filePath)
+            if not os.path.exists(os.path.join(dirPath, zip_filename)):
+                os.rename(os.path.join(dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
+            else:
+                print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
         for fileDir in os.listdir(arthur_path):
@@ -75,7 +125,7 @@ class Formatter:
             _, new_name = self.sep_arthur_name(name)
             
             if isChapter:
-                if fileDir.lower().endswith(img_ext):
+                if fileDir.lower().endswith(image_ext):
                     new_name = "[" + arthur + "] " + "thumbnails"
                 else:
                     dirName = os.path.basename(arthur_path)
@@ -85,10 +135,10 @@ class Formatter:
                             new_name = " ".join([dirName, num_list[0]])
                         else:
                             # Can not find number in filename
-                            chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(img_ext)]
+                            chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
                             new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
                     else:
-                        chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(img_ext)]
+                        chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
                         new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
             else:
                 remove_list = ["chapter", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
@@ -121,6 +171,8 @@ class Formatter:
                     os.rmdir(os.path.join(arthur_path, new_fileDir))
                 else:
                     self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
+            else:
+                formatter.cleanFile(os.path.join(arthur_path, new_fileDir))
 
 if __name__ == '__main__':
     import tkinter as tk
