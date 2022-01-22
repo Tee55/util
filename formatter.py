@@ -99,19 +99,19 @@ class Formatter:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp")
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
+                    
+                zipObj.close()
+                new_zipObj.close()
+                
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                if not os.path.exists(os.path.join(dirPath, zip_filename)):
+                    os.rename(os.path.join(dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
+                else:
+                    print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
                 
             except Exception as e:
                 print("{}: {}".format(filePath, e))
-                
-            zipObj.close()
-            new_zipObj.close()
-            
-            if os.path.exists(filePath):
-                os.remove(filePath)
-            if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                os.rename(os.path.join(dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
-            else:
-                print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
         for fileDir in os.listdir(arthur_path):
