@@ -101,7 +101,7 @@ class Formatter:
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
                 
             except Exception as e:
-                print(e)
+                print("{}: {}".format(filePath, e))
                 
             zipObj.close()
             new_zipObj.close()
