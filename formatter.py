@@ -108,7 +108,7 @@ class Formatter:
                     image_pil = Image.open(zipObj.open(jpeg_file))
                     image_pil = image_pil.convert('RGB')
                     image_byte = io.BytesIO()
-                    image_pil.save(image_byte, "webp")
+                    image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
                     
                 zipObj.close()
