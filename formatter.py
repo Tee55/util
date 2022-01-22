@@ -76,9 +76,20 @@ class Formatter:
         else:
             print("File {} is either zip or rar file".format(filePath))
             return
-        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve
-        fileList = [x for x in zipObj.namelist() if x.lower().endswith(('.jpg', '.png', '.jpeg')) or os.path.isdir(x)]
-        if len(fileList) > 0:
+        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve or '.webp' is not in root
+        fileDirList = []
+        for fileDirPath in zipObj.namelist():
+            if os.path.isdir(fileDirPath):
+                fileDirList.append(fileDirPath)
+            else:
+                filename = os.path.basename(fileDirPath)
+                if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                    fileDirList.append(fileDirPath)
+                else:
+                    if filename != fileDirPath:
+                        fileDirList.append(fileDirPath)
+                        
+        if len(fileDirList) > 0:
             jpeglist = []
             for x in zipObj.namelist():
                 if x.lower().endswith('/'):
@@ -175,6 +186,7 @@ class Formatter:
                 formatter.cleanFile(os.path.join(arthur_path, new_fileDir))
 
 if __name__ == '__main__':
+    '''
     import tkinter as tk
     from tkinter import filedialog
     import ctypes
@@ -185,6 +197,8 @@ if __name__ == '__main__':
     srcPath = filedialog.askdirectory()
     print("Select source dir path: {}".format(srcPath))
     root.destroy()
+    '''
 
     formatter = Formatter()
-    formatter.clean(srcPath)
+    #formatter.clean(srcPath)
+    formatter.cleanFile(r"E:\KasakiHikari\Manga (Censored)\r18\dekochin hammer\[dekochin hammer] best friend sex ochuumon wa usagi desu ka.cbz")
