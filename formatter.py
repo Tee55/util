@@ -77,7 +77,6 @@ class Formatter:
             print("File {} is either zip or rar file".format(filePath))
             return
         # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve
-        os.path.isdir(x)
         fileList = [x for x in zipObj.namelist() if x.lower().endswith(('.jpg', '.png', '.jpeg')) or os.path.isdir(x)]
         if len(fileList) > 0:
             jpeglist = []
