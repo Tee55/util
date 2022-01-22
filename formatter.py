@@ -186,7 +186,6 @@ class Formatter:
                 formatter.cleanFile(os.path.join(arthur_path, new_fileDir))
 
 if __name__ == '__main__':
-    '''
     import tkinter as tk
     from tkinter import filedialog
     import ctypes
@@ -197,8 +196,6 @@ if __name__ == '__main__':
     srcPath = filedialog.askdirectory()
     print("Select source dir path: {}".format(srcPath))
     root.destroy()
-    '''
 
     formatter = Formatter()
-    #formatter.clean(srcPath)
-    formatter.cleanFile(r"E:\KasakiHikari\Manga (Censored)\r18\dekochin hammer\[dekochin hammer] best friend sex ochuumon wa usagi desu ka.cbz")
+    formatter.clean(srcPath)
