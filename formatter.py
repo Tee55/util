@@ -9,6 +9,7 @@ import zipfile
 import rarfile
 import io
 from PIL import Image
+from numba import jit
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
@@ -33,6 +34,7 @@ class Formatter:
         name_output = " ".join(name_output.split())
         return name_output
 
+    @jit(target ="cuda")
     def clean(self, srcPath):
 
         bar = Bar('Processing', max=len(os.listdir(srcPath)))
@@ -109,7 +111,7 @@ class Formatter:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
-                    print("Image process: {}/{}".format(i, len(jpeglist)), end="\r")
+                    print(" Image process: {}/{}".format(i, len(jpeglist)), end="\r")
                     
                 zipObj.close()
                 new_zipObj.close()
