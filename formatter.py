@@ -25,6 +25,7 @@ class Formatter:
         if name_output == "":
             basename = "unknown"
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+            time.sleep(1)
             name_output = " ".join([basename, suffix])
         name_output = name_output.lower()
         
@@ -47,6 +48,7 @@ class Formatter:
                                   os.path.join(srcPath, new_arthur))
                     else:
                         suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+                        time.sleep(1)
                         new_arthur = "_".join([new_arthur, suffix])
                         os.rename(os.path.join(srcPath, arthur),
                                   os.path.join(srcPath, new_arthur))
