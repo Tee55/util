@@ -77,19 +77,18 @@ class Formatter:
             print("File {} is either zip or rar file".format(filePath))
             return
         # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve or '.webp' is not in root
-        fileDirList = []
+        notClean = False
         for fileDirPath in zipObj.namelist():
             if os.path.isdir(fileDirPath):
-                fileDirList.append(fileDirPath)
+                notClean = True
+                break
             else:
                 filename = os.path.basename(fileDirPath)
-                if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
-                    fileDirList.append(fileDirPath)
-                else:
-                    if filename != fileDirPath:
-                        fileDirList.append(fileDirPath)
+                if filename.lower().endswith(('.jpg', '.png', '.jpeg')) or filename != fileDirPath:
+                    notClean = True
+                    break
                         
-        if len(fileDirList) > 0:
+        if notClean:
             jpeglist = []
             for x in zipObj.namelist():
                 if x.lower().endswith('/'):
@@ -102,7 +101,7 @@ class Formatter:
             new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
             
             try:
-                for jpeg_file in jpeglist:
+                for i, jpeg_file in enumerate(jpeglist):
                     filename = os.path.basename(jpeg_file)
                     name, ext = os.path.splitext(filename)
                     image_pil = Image.open(zipObj.open(jpeg_file))
@@ -110,6 +109,7 @@ class Formatter:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
+                    print("Image process: {}/{}".format(i, len(jpeglist)), end="\r")
                     
                 zipObj.close()
                 new_zipObj.close()
