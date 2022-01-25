@@ -109,7 +109,7 @@ class Formatter:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
-                    print(" Image process: {}/{}".format(i, len(jpeglist)), end="\r")
+                    print("\nImage process: {}/{}".format(i, len(jpeglist)), end="\r")
                     
                 zipObj.close()
                 new_zipObj.close()
