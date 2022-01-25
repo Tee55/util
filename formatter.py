@@ -1,5 +1,4 @@
 import os
-from progress.bar import Bar
 import re
 import datetime
 from slugify import slugify
@@ -9,6 +8,7 @@ import zipfile
 import rarfile
 import io
 from PIL import Image
+from tqdm import tqdm
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
@@ -35,8 +35,7 @@ class Formatter:
 
     def clean(self, srcPath):
 
-        bar = Bar('Processing', max=len(os.listdir(srcPath)))
-        for arthur in os.listdir(srcPath):
+        for arthur in tqdm(os.listdir(srcPath)):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
@@ -53,8 +52,6 @@ class Formatter:
                         os.rename(os.path.join(srcPath, arthur),
                                   os.path.join(srcPath, new_arthur))
                 self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
-            bar.next()
-        bar.finish()
         
     def sep_arthur_name(self, name):
         arthur = name[name.find("[")+1:name.find("]")]
@@ -101,8 +98,7 @@ class Formatter:
             new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
             
             try:
-                subBar = Bar('Image Processing', max=len(jpeglist))
-                for jpeg_file in jpeglist:
+                for jpeg_file in tqdm(jpeglist, leave=False):
                     filename = os.path.basename(jpeg_file)
                     name, ext = os.path.splitext(filename)
                     image_pil = Image.open(zipObj.open(jpeg_file))
@@ -110,8 +106,6 @@ class Formatter:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
-                    subBar.next()
-                subBar.finish()
                     
                 zipObj.close()
                 new_zipObj.close()
