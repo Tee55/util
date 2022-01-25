@@ -101,7 +101,8 @@ class Formatter:
             new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
             
             try:
-                for i, jpeg_file in enumerate(jpeglist):
+                subBar = Bar('Image Processing', max=len(jpeglist))
+                for jpeg_file in jpeglist:
                     filename = os.path.basename(jpeg_file)
                     name, ext = os.path.splitext(filename)
                     image_pil = Image.open(zipObj.open(jpeg_file))
@@ -109,7 +110,8 @@ class Formatter:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(name + ".webp", image_byte.getvalue())
-                    print("\nImage process: {}/{}".format(i, len(jpeglist)), end="\r")
+                    subBar.next()
+                subBar.finish()
                     
                 zipObj.close()
                 new_zipObj.close()
