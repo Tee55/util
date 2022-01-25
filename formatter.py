@@ -35,7 +35,7 @@ class Formatter:
 
     def clean(self, srcPath):
 
-        for arthur in tqdm(os.listdir(srcPath)):
+        for arthur in tqdm(os.listdir(srcPath), desc='Progress'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
@@ -98,7 +98,7 @@ class Formatter:
             new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
             
             try:
-                for jpeg_file in tqdm(jpeglist, leave=False):
+                for jpeg_file in tqdm(jpeglist, leave=False, desc='Image progress'):
                     filename = os.path.basename(jpeg_file)
                     name, ext = os.path.splitext(filename)
                     image_pil = Image.open(zipObj.open(jpeg_file))
