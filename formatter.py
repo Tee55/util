@@ -9,7 +9,6 @@ import zipfile
 import rarfile
 import io
 from PIL import Image
-from numba import jit
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')

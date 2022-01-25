@@ -4,4 +4,3 @@ Pillow
 python-slugify
 natsort
 rarfile
-numba
