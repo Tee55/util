@@ -70,9 +70,20 @@ class Formatter:
             zipObj = zipfile.ZipFile(filePath, 'r')
         elif rarfile.is_rarfile(filePath):
             zipObj = rarfile.RarFile(filePath, 'r')
-        else:
-            print("File {} is either zip or rar file".format(filePath))
+        elif filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
+            image_pil = Image.open(filePath)
+            image_pil = image_pil.convert('RGB')
+            filename = os.path.basename(filePath)
+            name, ext = os.path.splitext(filename)
+            dirPath = os.path.dirname(filePath) 
+            if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                os.remove(filePath)
             return
+        else:
+            print("File {} is either zip or rar or image format".format(filePath))
+            return
+        
         # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve or '.webp' is not in root
         notClean = False
         for fileDirPath in zipObj.namelist():
