@@ -72,6 +72,7 @@ class Formatter:
             zipObj = rarfile.RarFile(filePath, 'r')
         elif filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
             image_pil = Image.open(filePath)
+            image_pil.thumbnail((1024, 1024))
             image_pil = image_pil.convert('RGB')
             filename = os.path.basename(filePath)
             name, ext = os.path.splitext(filename)
