@@ -113,6 +113,7 @@ class Formatter:
                     filename = os.path.basename(jpeg_file)
                     name, ext = os.path.splitext(filename)
                     image_pil = Image.open(zipObj.open(jpeg_file))
+                    image_pil.thumbnail((1024, 1024))
                     image_pil = image_pil.convert('RGB')
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
