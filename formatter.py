@@ -136,6 +136,8 @@ class Formatter:
                     print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
                 
             except Exception as e:
+                if os.path.exists(os.path.join(dirPath, "temp.zip")):
+                    os.remove(os.path.join(dirPath, "temp.zip"))
                 print("{}: {}".format(filePath, e))
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
