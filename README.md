@@ -20,7 +20,11 @@ My Source/                  # Source Folder
 ```
 
 ### Formatter
-Slugnify -> Remove unneccessary words -> rename filename as format '[author|artist] filename.ext'
+Slugnify -> Remove unneccessary words -> rename filename as format '[author|artist] filename.ext' -> Then do following condition for file types
+
+Resize image with ratio if width and height > 1024px to 1024px
+Convert .jpg, .png -> .webp image format
+Convert .avi, .mkv -> .mp4 video format
 
 ### Updater
 Update new file to destined directory. For destined directory format, please refer to reader project https://github.com/Tee55/reader.

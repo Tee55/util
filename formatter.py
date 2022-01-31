@@ -7,8 +7,10 @@ from natsort import natsorted
 import zipfile
 import rarfile
 import io
-from PIL import Image
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES=True
 from tqdm import tqdm
+from moviepy.editor import *
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
@@ -67,9 +69,15 @@ class Formatter:
         
     def cleanFile(self, filePath):
         if zipfile.is_zipfile(filePath):
-            zipObj = zipfile.ZipFile(filePath, 'r')
+            try:
+                zipObj = zipfile.ZipFile(filePath, 'r')
+            except Exception as e:
+                print("{}: {}".format(filePath, e))
         elif rarfile.is_rarfile(filePath):
-            zipObj = rarfile.RarFile(filePath, 'r')
+            try:
+                zipObj = rarfile.RarFile(filePath, 'r')
+            except Exception as e:
+                print("{}: {}".format(filePath, e))
         elif filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
             image_pil = Image.open(filePath)
             image_pil.thumbnail((1024, 1024))
@@ -81,11 +89,20 @@ class Formatter:
                 image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                 os.remove(filePath)
             return
+        elif filePath.lower().endswith(('.avi', '.mkv')):
+            filename = os.path.basename(filePath)
+            name, ext = os.path.splitext(filename)
+            dirPath = os.path.dirname(filePath)
+            clip = VideoFileClip(filePath)
+            if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
+                clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
+                os.remove(filePath)
+            return
         else:
-            print("File {} is either zip or rar or image format".format(filePath))
+            print("{}: File format unknown".format(filePath))
             return
         
-        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve or '.webp' is not in root
+        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve or '.webp' is not in root or '.webp' h and w > 1024
         notClean = False
         for fileDirPath in zipObj.namelist():
             if os.path.isdir(fileDirPath):
@@ -96,6 +113,13 @@ class Formatter:
                 if filename.lower().endswith(('.jpg', '.png', '.jpeg')) or filename != fileDirPath:
                     notClean = True
                     break
+                else:
+                    # Check image size (webp)
+                    image_pil = Image.open(zipObj.open(fileDirPath))
+                    w, h = image_pil.size
+                    if w > 1024 and h > 1024:
+                        notClean = True
+                        break
                         
         if notClean:
             jpeglist = []
@@ -135,7 +159,8 @@ class Formatter:
                 else:
                     print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
                 
-            except Exception as e:
+            except (Exception, UserWarning) as e:
+                new_zipObj.close()
                 if os.path.exists(os.path.join(dirPath, "temp.zip")):
                     os.remove(os.path.join(dirPath, "temp.zip"))
                 print("{}: {}".format(filePath, e))
@@ -171,7 +196,9 @@ class Formatter:
                 remove_list = ["chapter", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
                 for word in remove_list:
                     new_name = new_name.split(word, 1)[0]
-                new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
+                    
+                if re.search(r'\d{6}\s\d{6}', new_name):
+                    new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
                 new_name = " ".join(new_name.split())
                 new_name = "[" + arthur + "] " + new_name
             if name != new_name:
