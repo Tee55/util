@@ -181,19 +181,17 @@ class Formatter:
                     new_name = "[" + arthur + "] " + "thumbnails"
                 else:
                     dirName = os.path.basename(arthur_path)
-                    if "chapter" in new_name:
-                        num_list = re.findall(r'\d+', new_name[new_name.find("chapter")+1:]) 
+                    noChapterNum = True
+                    for word in ["chapter", "chapters"]:
+                        num_list = re.findall(r'\d+', new_name[new_name.find(word)+1:])
                         if num_list != []:
                             new_name = " ".join([dirName, num_list[0]])
-                        else:
-                            # Can not find number in filename
-                            chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
-                            new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
-                    else:
+                            noChapterNum = False
+                    if noChapterNum:
                         chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
                         new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
             else:
-                remove_list = ["chapter", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
+                remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
                 for word in remove_list:
                     new_name = new_name.split(word, 1)[0]
                     
