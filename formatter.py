@@ -9,6 +9,7 @@ import rarfile
 import io
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES=True
+Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
 from moviepy.editor import *
 rarfile.UNRAR_TOOL = "UnRAR.exe"
