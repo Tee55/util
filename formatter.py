@@ -6,6 +6,7 @@ import time
 from natsort import natsorted
 import zipfile
 import rarfile
+import tarfile
 import io
 from PIL import Image, ImageFile, UnidentifiedImageError
 ImageFile.LOAD_TRUNCATED_IMAGES=True
@@ -38,7 +39,7 @@ class Formatter:
 
     def clean(self, srcPath):
 
-        for arthur in tqdm(os.listdir(srcPath), desc='Progress'):
+        for arthur in tqdm(os.listdir(srcPath), desc='Progress', bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:10}{r_bar}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
@@ -74,18 +75,26 @@ class Formatter:
                 zipObj = zipfile.ZipFile(filePath, 'r')
             except Exception as e:
                 print("{}: {}".format(filePath, e))
+                return
         elif rarfile.is_rarfile(filePath):
             try:
                 zipObj = rarfile.RarFile(filePath, 'r')
             except Exception as e:
                 print("{}: {}".format(filePath, e))
+                return
+        elif tarfile.is_tarfile(filePath):
+            try:
+                zipObj = tarfile.TarFile(filePath, 'r')
+            except Exception as e:
+                print("{}: {}".format(filePath, e))
+                return
         elif filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
             image_pil = Image.open(filePath)
             image_pil.thumbnail((1024, 1024))
             image_pil = image_pil.convert('RGB')
             filename = os.path.basename(filePath)
             name, ext = os.path.splitext(filename)
-            dirPath = os.path.dirname(filePath) 
+            dirPath = os.path.dirname(filePath)
             if not os.path.exists(os.path.join(dirPath, name + ".webp")):
                 image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                 os.remove(filePath)
@@ -100,73 +109,76 @@ class Formatter:
                 os.remove(filePath)
             return
         else:
-            print("{}: File format unknown".format(filePath))
+            print("File format unknown: {}".format(filePath))
             return
         
-        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve or '.webp' is not in root or '.webp' h and w > 1024
-        notClean = False
-        for fileDirPath in zipObj.namelist():
+        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve
+        # .webp' is not in root
+        # '.webp' h and w > 1024
+        zip_filename = os.path.basename(filePath)
+        dirPath = os.path.dirname(filePath)
+        new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
+        isWrite = False
+        image_index = 1
+        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Image progress', bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:10}{r_bar}'):
             if os.path.isdir(fileDirPath):
-                notClean = True
-                break
-            else:
+                pass
+            elif fileDirPath.lower().endswith(image_ext):
                 filename = os.path.basename(fileDirPath)
-                if filename.lower().endswith(('.jpg', '.png', '.jpeg')) or filename != fileDirPath:
-                    notClean = True
-                    break
-                else:
-                    # Check image size (webp)
-                    
-                    try:
-                        image_pil = Image.open(zipObj.open(fileDirPath))
-                    except Exception as e:
-                        print("{}: {}".format(filePath, e))
+                try:
+                    image_pil = Image.open(zipObj.open(fileDirPath))
                     w, h = image_pil.size
-                    if w > 1024 and h > 1024:
-                        notClean = True
-                        break
-                        
-        if notClean:
-            jpeglist = []
-            for x in zipObj.namelist():
-                if x.lower().endswith('/'):
-                    pass
-                elif x.lower().endswith(image_ext):
-                    jpeglist.append(x)
-            jpeglist = natsorted(jpeglist)
-            zip_filename = os.path.basename(filePath)
-            dirPath = os.path.dirname(filePath)
-            new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
-            
-            try:
-                for index, jpeg_file in tqdm(enumerate(jpeglist), leave=False, desc='Image progress'):
-                    image_pil = Image.open(zipObj.open(jpeg_file))
-                    w, h = image_pil.size
-                    if h > 3*w:
-                        # manhwa
-                        pass
-                    else:
+                except Exception as e:
+                    print("{}: {}".format(filePath, e))
+                    zipObj.close()
+                    new_zipObj.close()
+                    if os.path.exists(os.path.join(dirPath, "temp.zip")):
+                        os.remove(os.path.join(dirPath, "temp.zip"))
+                    return
+
+                # Check image size
+                if w > 1024 and h > 1024:
+                    if h <= 3*w:
                         image_pil.thumbnail((1024, 1024))
+                        isWrite = True
+                        
+                # Check image mime types
+                if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                    isWrite = True
+                
+                # Check if image file in root
+                if filename != fileDirPath:
+                    isWrite = True
+                    
+                # Check if image filename in ascending order
+                name, ext = os.path.splitext(filename)
+                if name != str(image_index):
+                    isWrite = True
+                    
+                if isWrite:
                     image_pil = image_pil.convert('RGB')
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
+                    new_zipObj.writestr(str(image_index) + ".webp", image_byte.getvalue())
                     
-                zipObj.close()
-                new_zipObj.close()
-                
-                if os.path.exists(filePath):
-                    os.remove(filePath)
-                if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                    os.rename(os.path.join(dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
-                else:
-                    print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
-                
-            except (Exception, UserWarning) as e:
-                new_zipObj.close()
-                if os.path.exists(os.path.join(dirPath, "temp.zip")):
-                    os.remove(os.path.join(dirPath, "temp.zip"))
-                print("{}: {}".format(filePath, e))
+                image_index += 1
+                    
+        zipObj.close()
+        new_zipObj.close()
+        
+        # Remove file -> Rename temp to file
+        if isWrite:
+            if os.path.exists(filePath):
+                os.remove(filePath)
+            if not os.path.exists(os.path.join(dirPath, zip_filename)):
+                os.rename(os.path.join(dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
+            else:
+                print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
+                return
+        else:
+            if os.path.exists(os.path.join(dirPath, "temp.zip")):
+                os.remove(os.path.join(dirPath, "temp.zip"))
+
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
         for fileDir in os.listdir(arthur_path):
