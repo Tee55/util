@@ -7,7 +7,7 @@ from natsort import natsorted
 import zipfile
 import rarfile
 import io
-from PIL import Image, ImageFile
+from PIL import Image, ImageFile, UnidentifiedImageError
 ImageFile.LOAD_TRUNCATED_IMAGES=True
 Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
@@ -116,7 +116,11 @@ class Formatter:
                     break
                 else:
                     # Check image size (webp)
-                    image_pil = Image.open(zipObj.open(fileDirPath))
+                    
+                    try:
+                        image_pil = Image.open(io.BytesIO(zipObj.read(fileDirPath)))
+                    except Exception as e:
+                        print("{}: {}".format(filePath, e))
                     w, h = image_pil.size
                     if w > 1024 and h > 1024:
                         notClean = True
@@ -135,10 +139,8 @@ class Formatter:
             new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
             
             try:
-                for jpeg_file in tqdm(jpeglist, leave=False, desc='Image progress'):
-                    filename = os.path.basename(jpeg_file)
-                    name, ext = os.path.splitext(filename)
-                    image_pil = Image.open(zipObj.open(jpeg_file))
+                for index, jpeg_file in tqdm(enumerate(jpeglist), leave=False, desc='Image progress'):
+                    image_pil = Image.open(io.BytesIO(zipObj.read(jpeg_file)))
                     w, h = image_pil.size
                     if h > 3*w:
                         # manhwa
@@ -148,7 +150,7 @@ class Formatter:
                     image_pil = image_pil.convert('RGB')
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(name + ".webp", image_byte.getvalue())
+                    new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
                     
                 zipObj.close()
                 new_zipObj.close()
