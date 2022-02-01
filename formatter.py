@@ -118,7 +118,7 @@ class Formatter:
                     # Check image size (webp)
                     
                     try:
-                        image_pil = Image.open(io.BytesIO(zipObj.read(fileDirPath)))
+                        image_pil = Image.open(zipObj.open(fileDirPath))
                     except Exception as e:
                         print("{}: {}".format(filePath, e))
                     w, h = image_pil.size
@@ -140,7 +140,7 @@ class Formatter:
             
             try:
                 for index, jpeg_file in tqdm(enumerate(jpeglist), leave=False, desc='Image progress'):
-                    image_pil = Image.open(io.BytesIO(zipObj.read(jpeg_file)))
+                    image_pil = Image.open(zipObj.open(jpeg_file))
                     w, h = image_pil.size
                     if h > 3*w:
                         # manhwa
