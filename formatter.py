@@ -17,6 +17,7 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 image_ext = ('.jpg', '.png', '.webp', '.jpeg')
+video_ext = ('.mp4', '.avi', '.mkv')
 
 class Formatter:
 
@@ -88,26 +89,32 @@ class Formatter:
             except Exception as e:
                 print("{}: {}".format(filePath, e))
                 return
-        elif filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
-            image_pil = Image.open(filePath)
-            image_pil.thumbnail((1024, 1024))
-            image_pil = image_pil.convert('RGB')
-            filename = os.path.basename(filePath)
-            name, ext = os.path.splitext(filename)
-            dirPath = os.path.dirname(filePath)
-            if not os.path.exists(os.path.join(dirPath, name + ".webp")):
-                image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                os.remove(filePath)
-            return
-        elif filePath.lower().endswith(('.avi', '.mkv')):
-            filename = os.path.basename(filePath)
-            name, ext = os.path.splitext(filename)
-            dirPath = os.path.dirname(filePath)
-            clip = VideoFileClip(filePath)
-            if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
-                clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
-                os.remove(filePath)
-            return
+        elif filePath.lower().endswith(image_ext):
+            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
+                image_pil = Image.open(filePath)
+                image_pil.thumbnail((1024, 1024))
+                image_pil = image_pil.convert('RGB')
+                filename = os.path.basename(filePath)
+                name, ext = os.path.splitext(filename)
+                dirPath = os.path.dirname(filePath)
+                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                    os.remove(filePath)
+                return
+            else:
+                return
+        elif filePath.lower().endswith(video_ext):
+            if filePath.lower().endswith(('.avi', '.mkv')):
+                filename = os.path.basename(filePath)
+                name, ext = os.path.splitext(filename)
+                dirPath = os.path.dirname(filePath)
+                clip = VideoFileClip(filePath)
+                if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
+                    clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
+                    os.remove(filePath)
+                return
+            else:
+                return
         else:
             print("File format unknown: {}".format(filePath))
             return
