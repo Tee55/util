@@ -8,7 +8,7 @@ import zipfile
 import rarfile
 import tarfile
 import io
-from PIL import Image, ImageFile, UnidentifiedImageError
+from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
 Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
@@ -19,6 +19,7 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 image_ext = ('.jpg', '.png', '.webp', '.jpeg')
 video_ext = ('.mp4', '.avi', '.mkv')
+image_size = (1024, 1024)
 
 class Formatter:
 
@@ -41,7 +42,7 @@ class Formatter:
 
     def clean(self, srcPath):
 
-        for arthur in tqdm(os.listdir(srcPath), desc='Progress', bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:10}{r_bar}'):
+        for arthur in tqdm(os.listdir(srcPath), desc='Main Progress', bar_format='{desc}{percentage:3.0f}%|{bar:10}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
@@ -97,28 +98,53 @@ class Formatter:
                 print("{}: {}".format(filePath, e))
                 return
         elif filePath.lower().endswith(image_ext):
+            image_pil = Image.open(filePath)
+            image_pil = image_pil.convert('RGB')
+            w, h = image_pil.size
             if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
-                image_pil = Image.open(filePath)
-                image_pil.thumbnail((1024, 1024))
-                image_pil = image_pil.convert('RGB')
+                image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
                 if not os.path.exists(os.path.join(dirPath, name + ".webp")):
                     image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                    os.remove(filePath)
+                return
+            elif w > 1024 and h > 1024 and h <= 3*w:
+                image_pil.thumbnail(image_size)
+                filename = os.path.basename(filePath)
+                name, ext = os.path.splitext(filename)
+                dirPath = os.path.dirname(filePath)
+                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                 return
             else:
                 return
+        elif filePath.lower().endswith(".gif"):
+            image_pil = Image.open(filePath)   
+            frames = ImageSequence.Iterator(image_pil)
+            def thumbnails(frames):
+                for frame in frames:
+                    thumbnail = frame.copy()
+                    thumbnail.thumbnail(image_size)
+                    yield thumbnail
+                    
+            frames = thumbnails(frames)
+            filename = os.path.basename(filePath)
+            name, ext = os.path.splitext(filename)
+            dirPath = os.path.dirname(filePath)
+            if not os.path.exists(os.path.join(dirPath, name + ".gif")):
+                image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
+            return
         elif filePath.lower().endswith(video_ext):
             if filePath.lower().endswith(('.avi', '.mkv')):
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
                 clip = VideoFileClip(filePath)
+                if os.path.exists(filePath):
+                    os.remove(filePath)
                 if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
                     clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
-                    os.remove(filePath)
                 return
             else:
                 return
@@ -134,13 +160,15 @@ class Formatter:
         new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
         isWrite = False
         image_index = 1
-        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Image progress', bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:10}{r_bar}'):
+        write_index = 1
+        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Image Progress', bar_format='{desc}{percentage:3.0f}%|{bar:10}'):
             if os.path.isdir(fileDirPath):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
                 filename = os.path.basename(fileDirPath)
                 try:
                     image_pil = Image.open(zipObj.open(fileDirPath))
+                    image_pil = image_pil.convert('RGB')
                     w, h = image_pil.size
                 except Exception as e:
                     print("{}: {}".format(filePath, e))
@@ -153,7 +181,7 @@ class Formatter:
                 # Check image size
                 if w > 1024 and h > 1024:
                     if h <= 3*w:
-                        image_pil.thumbnail((1024, 1024))
+                        image_pil.thumbnail(image_size)
                         isWrite = True
                         
                 # Check image mime types
@@ -169,11 +197,18 @@ class Formatter:
                 if name != str(image_index):
                     isWrite = True
                     
-                if isWrite:
-                    image_pil = image_pil.convert('RGB')
+                if isWrite and write_index==image_index:
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(str(image_index) + ".webp", image_byte.getvalue())
+                    write_index += 1
+                else:
+                    zipObj.close()
+                    new_zipObj.close()
+                    if os.path.exists(os.path.join(dirPath, "temp.zip")):
+                        os.remove(os.path.join(dirPath, "temp.zip"))
+                    print("{}: Internal filename conflict, please check.".format(filePath))
+                    return
                     
                 image_index += 1
                     
@@ -195,7 +230,13 @@ class Formatter:
 
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
-        for fileDir in os.listdir(arthur_path):
+        
+        if isChapter:
+            desc = "Chapter Folder Progress"
+        else:
+            desc = "Author Folder Progress"
+        
+        for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{desc}{percentage:3.0f}%|{bar:10}'):
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
                 name = fileDir
                 ext = None
