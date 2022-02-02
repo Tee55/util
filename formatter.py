@@ -157,7 +157,7 @@ class Formatter:
         # '.webp' h and w > 1024
         zip_filename = os.path.basename(filePath)
         dirPath = os.path.dirname(filePath)
-        new_zipObj = zipfile.ZipFile(os.path.join(dirPath, "temp.zip"), 'w')
+        new_zipObj = zipfile.ZipFile(os.path.join("temp/", "temp.zip"), 'w')
         isWrite = False
         image_index = 1
         write_index = 1
@@ -174,8 +174,8 @@ class Formatter:
                     print("{}: {}".format(filePath, e))
                     zipObj.close()
                     new_zipObj.close()
-                    if os.path.exists(os.path.join(dirPath, "temp.zip")):
-                        os.remove(os.path.join(dirPath, "temp.zip"))
+                    if os.path.exists(os.path.join("temp/", "temp.zip")):
+                        os.remove(os.path.join("temp/", "temp.zip"))
                     return
 
                 # Check image size
@@ -206,8 +206,8 @@ class Formatter:
                     else:
                         zipObj.close()
                         new_zipObj.close()
-                        if os.path.exists(os.path.join(dirPath, "temp.zip")):
-                            os.remove(os.path.join(dirPath, "temp.zip"))
+                        if os.path.exists(os.path.join("temp/", "temp.zip")):
+                            os.remove(os.path.join("temp/", "temp.zip"))
                         print("{}: Internal filename conflict, please check.".format(filePath))
                         return
                     
@@ -221,13 +221,13 @@ class Formatter:
             if os.path.exists(filePath):
                 os.remove(filePath)
             if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                os.rename(os.path.join(dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
+                os.rename(os.path.join("temp/", "temp.zip"), os.path.join(dirPath, zip_filename))
             else:
                 print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
                 return
         else:
-            if os.path.exists(os.path.join(dirPath, "temp.zip")):
-                os.remove(os.path.join(dirPath, "temp.zip"))
+            if os.path.exists(os.path.join("temp/", "temp.zip")):
+                os.remove(os.path.join("temp/", "temp.zip"))
 
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
