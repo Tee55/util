@@ -42,7 +42,7 @@ class Formatter:
 
     def clean(self, srcPath):
 
-        for arthur in tqdm(os.listdir(srcPath), desc='Main Progress', bar_format='{desc}{percentage:3.0f}%|{bar:10}'):
+        for arthur in tqdm(os.listdir(srcPath), desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
@@ -161,7 +161,7 @@ class Formatter:
         isWrite = False
         image_index = 1
         write_index = 1
-        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Image Progress', bar_format='{desc}{percentage:3.0f}%|{bar:10}'):
+        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Image Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(fileDirPath):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
@@ -197,18 +197,19 @@ class Formatter:
                 if name != str(image_index):
                     isWrite = True
                     
-                if isWrite and write_index==image_index:
-                    image_byte = io.BytesIO()
-                    image_pil.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(str(image_index) + ".webp", image_byte.getvalue())
-                    write_index += 1
-                else:
-                    zipObj.close()
-                    new_zipObj.close()
-                    if os.path.exists(os.path.join(dirPath, "temp.zip")):
-                        os.remove(os.path.join(dirPath, "temp.zip"))
-                    print("{}: Internal filename conflict, please check.".format(filePath))
-                    return
+                if isWrite:
+                    if write_index==image_index:
+                        image_byte = io.BytesIO()
+                        image_pil.save(image_byte, "webp", quality=100)
+                        new_zipObj.writestr(str(image_index) + ".webp", image_byte.getvalue())
+                        write_index += 1
+                    else:
+                        zipObj.close()
+                        new_zipObj.close()
+                        if os.path.exists(os.path.join(dirPath, "temp.zip")):
+                            os.remove(os.path.join(dirPath, "temp.zip"))
+                        print("{}: Internal filename conflict, please check.".format(filePath))
+                        return
                     
                 image_index += 1
                     
@@ -236,7 +237,7 @@ class Formatter:
         else:
             desc = "Author Folder Progress"
         
-        for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{desc}{percentage:3.0f}%|{bar:10}'):
+        for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
                 name = fileDir
                 ext = None
