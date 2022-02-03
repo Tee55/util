@@ -14,6 +14,7 @@ Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
 from moviepy.editor import *
 import py7zr
+import shutil
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
@@ -221,7 +222,7 @@ class Formatter:
             if os.path.exists(filePath):
                 os.remove(filePath)
             if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                os.rename(os.path.join("temp/", "temp.zip"), os.path.join(dirPath, zip_filename))
+                shutil.move(os.path.join("temp/", "temp.zip"), os.path.join(dirPath, zip_filename))
             else:
                 print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
                 return
