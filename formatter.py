@@ -261,8 +261,8 @@ class Formatter:
             # Only one image in Chapter Folder mean it is thumbnail
             count = 0
             isThumbnail = True
-            for fileDir in os.listdir(arthur_path):
-                if fileDir.lower().endswith(image_ext):
+            for chapFile in os.listdir(arthur_path):
+                if chapFile.lower().endswith(image_ext):
                     count += 1
                 if count >= 2:
                     isThumbnail = False
@@ -271,13 +271,12 @@ class Formatter:
             desc = "Author Folder Progress"
         
         for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+    
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
-                name = fileDir
-                ext = None
+                name = fileDir 
             else:
-                name, ext = os.path.splitext(fileDir)
-                if ext.endswith(zip_ext):
-                    ext = ".cbz"
+                name = os.path.splitext(fileDir)[0]
+                
             _, new_name = self.sep_arthur_name(name)
             
             if isChapter:
@@ -318,7 +317,8 @@ class Formatter:
                 new_name = "[" + arthur + "] " + new_name
                 
             if name != new_name:
-                if ext:
+                if os.path.isfile(os.path.join(arthur_path, fileDir)):
+                    name, ext = os.path.splitext(fileDir)
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
@@ -328,7 +328,7 @@ class Formatter:
                     suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                     time.sleep(1)
                     new_name = " ".join([new_name, suffix])
-                    if ext:
+                    if os.path.isfile(os.path.join(arthur_path, fileDir)):
                         new_fileDir = new_name + ext
                     else:
                         new_fileDir = new_name
@@ -350,6 +350,7 @@ class Formatter:
                 else:
                     self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
             else:
+                print(os.path.join(arthur_path, new_fileDir))
                 formatter.cleanFile(os.path.join(arthur_path, new_fileDir))
 
 if __name__ == '__main__':
