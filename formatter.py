@@ -228,19 +228,17 @@ class Formatter:
         
         if isChapter:
             desc = "Chapter Folder Progress"
+            # Only one image in Chapter Folder mean it is thumbnail
+            count = 0
+            isThumbnail = True
+            for fileDir in os.listdir(arthur_path):
+                if fileDir.lower().endswith(image_ext):
+                    count += 1
+                if count >= 2:
+                    isThumbnail = False
+                    break
         else:
             desc = "Author Folder Progress"
-        
-        
-        # Only one image in Chapter Folder mean it is thumbnail
-        count = 0
-        isThumbnail = True
-        for fileDir in os.listdir(arthur_path):
-            if fileDir.lower().endswith(image_ext):
-                count += 1
-            if count >= 2:
-                isThumbnail = False
-                break
         
         for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
@@ -253,14 +251,13 @@ class Formatter:
             _, new_name = self.sep_arthur_name(name)
             
             if isChapter:
+                dirName = os.path.basename(arthur_path)
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
                     new_name = "[" + arthur + "] " + "thumbnails"
                 elif fileDir.lower().endswith(image_ext) and not isThumbnail:
                     chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if ele.lower().endswith(image_ext)]
-                    dirName = os.path.basename(arthur_path)
                     new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
-                else:
-                    dirName = os.path.basename(arthur_path)
+                else:        
                     noChapterNum = True
                     for word in ["chapter", "chapters"]:
                         num_list = re.findall(r'\d+', new_name[new_name.find(word)+1:])
