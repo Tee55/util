@@ -13,7 +13,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES=True
 Image.MAX_IMAGE_PIXELS = None
 from tqdm import tqdm
 from moviepy.editor import *
-import py7zr
 import shutil
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
@@ -89,12 +88,6 @@ class Formatter:
         elif tarfile.is_tarfile(filePath):
             try:
                 zipObj = tarfile.TarFile(filePath, 'r')
-            except Exception as e:
-                print("{}: {}".format(filePath, e))
-                return
-        elif py7zr.is_7zfile(filePath):
-            try:
-                zipObj = py7zr.SevenZipFile(filePath, 'r')
             except Exception as e:
                 print("{}: {}".format(filePath, e))
                 return

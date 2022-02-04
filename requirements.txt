@@ -6,4 +6,3 @@ natsort
 rarfile
 tqdm
 moviepy
-py7zr
