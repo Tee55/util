@@ -100,35 +100,47 @@ class Formatter:
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
-                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                return
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                    if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                        image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                    return
             elif w > 1024 and h > 1024 and h <= 3*w:
                 image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
-                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                return
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                    if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                        image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                    return
             else:
+                # Perfect
                 return
         elif filePath.lower().endswith(".gif"):
-            image_pil = Image.open(filePath)   
+            image_pil = Image.open(filePath)
             frames = ImageSequence.Iterator(image_pil)
-            def thumbnails(frames):
-                for frame in frames:
-                    thumbnail = frame.copy()
-                    thumbnail.thumbnail(image_size)
-                    yield thumbnail
-                    
-            frames = thumbnails(frames)
-            filename = os.path.basename(filePath)
-            name, ext = os.path.splitext(filename)
-            dirPath = os.path.dirname(filePath)
-            if not os.path.exists(os.path.join(dirPath, name + ".gif")):
-                image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
-            return
+            w, h = frames[0].size
+            if w > 1024 and h > 1024 and h <= 3*w:
+                def thumbnails(frames):
+                    for frame in frames:
+                        thumbnail = frame.copy()
+                        thumbnail.thumbnail(image_size)
+                        yield thumbnail
+                        
+                frames = thumbnails(frames)
+                filename = os.path.basename(filePath)
+                name, ext = os.path.splitext(filename)
+                dirPath = os.path.dirname(filePath)
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                    if not os.path.exists(os.path.join(dirPath, name + ".gif")):
+                        image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
+                    return
+            else:
+                # Perfect
+                return
         elif filePath.lower().endswith(video_ext):
             if filePath.lower().endswith(('.avi', '.mkv')):
                 filename = os.path.basename(filePath)
@@ -137,10 +149,11 @@ class Formatter:
                 clip = VideoFileClip(filePath)
                 if os.path.exists(filePath):
                     os.remove(filePath)
-                if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
-                    clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
-                return
-            else:
+                    if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
+                        clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
+                    return
+            elif filePath.lower().endswith('.mp4'):
+                # Perfect
                 return
         else:
             print("File format unknown: {}".format(filePath))
@@ -214,11 +227,11 @@ class Formatter:
         if isWrite:
             if os.path.exists(filePath):
                 os.remove(filePath)
-            if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                shutil.move(os.path.join("temp/", "temp.zip"), os.path.join(dirPath, zip_filename))
-            else:
-                print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
-                return
+                if not os.path.exists(os.path.join(dirPath, zip_filename)):
+                    shutil.move(os.path.join("temp/", "temp.zip"), os.path.join(dirPath, zip_filename))
+                else:
+                    print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
+                    return
         else:
             if os.path.exists(os.path.join("temp/", "temp.zip")):
                 os.remove(os.path.join("temp/", "temp.zip"))
