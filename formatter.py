@@ -8,9 +8,11 @@ import zipfile
 import rarfile
 import tarfile
 import io
+
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
 Image.MAX_IMAGE_PIXELS = None
+
 from tqdm import tqdm
 from moviepy.editor import *
 import shutil
@@ -28,12 +30,17 @@ class Formatter:
         # Remove head and tail whitespaces
         name = name.strip()
         
+        # Slugify
         name_output = slugify(name, separator=" ")
+        
+        # Append datetime if string after slugnify is empty
         if name_output == "":
             basename = "unknown"
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
             name_output = " ".join([basename, suffix])
+            
+        # Change to all lowercase 
         name_output = name_output.lower()
         
         # Combine multiple whitespaces to one
@@ -44,20 +51,24 @@ class Formatter:
 
         for arthur in tqdm(os.listdir(srcPath), desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
+                # Remove empty folder
                 os.rmdir(os.path.join(srcPath, arthur))
             else:
                 new_arthur = self.cleanName(arthur)
-       
+
+                # Renaming arthur name
                 if arthur != new_arthur:
                     if new_arthur not in os.listdir(srcPath):
                         os.rename(os.path.join(srcPath, arthur),
                                   os.path.join(srcPath, new_arthur))
                     else:
-                        suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                         time.sleep(1)
-                        new_arthur = "_".join([new_arthur, suffix])
+                        new_arthur = " ".join([new_arthur, suffix])
                         os.rename(os.path.join(srcPath, arthur),
                                   os.path.join(srcPath, new_arthur))
+                        
+                # Renaming arthur items
                 self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
         
     def sep_arthur_name(self, name):
@@ -105,7 +116,7 @@ class Formatter:
                     if not os.path.exists(os.path.join(dirPath, name + ".webp")):
                         image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                     return
-            elif w > 1024 and h > 1024 and h <= 3*w:
+            elif w > 1024 and h > 1024:
                 image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
@@ -121,8 +132,11 @@ class Formatter:
         elif filePath.lower().endswith(".gif"):
             image_pil = Image.open(filePath)
             frames = ImageSequence.Iterator(image_pil)
+            
+            # Check size only first frame
             w, h = frames[0].size
-            if w > 1024 and h > 1024 and h <= 3*w:
+            
+            if w > 1024 and h > 1024:
                 def thumbnails(frames):
                     for frame in frames:
                         thumbnail = frame.copy()
@@ -211,6 +225,7 @@ class Formatter:
                         new_zipObj.writestr(str(image_index) + ".webp", image_byte.getvalue())
                         write_index += 1
                     else:
+                        # Zip does not write all image file
                         zipObj.close()
                         new_zipObj.close()
                         if os.path.exists(os.path.join("temp/", "temp.zip")):
@@ -241,6 +256,7 @@ class Formatter:
         
         if isChapter:
             desc = "Chapter Folder Progress"
+            
             # Only one image in Chapter Folder mean it is thumbnail
             count = 0
             isThumbnail = True
@@ -281,19 +297,29 @@ class Formatter:
                         chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
                         new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
             else:
+                
+                # Remove common ending words in doujin
                 remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
                 for word in remove_list:
                     new_name = new_name.split(word, 1)[0]
-                    
+                
+                # Update datetime if there is datetime in string
                 if re.search(r'\d{6}\s\d{6}', new_name):
                     new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
+                
+                # Combine multiple whitespaces to one
                 new_name = " ".join(new_name.split())
+                
+                # add arthur name to the front
                 new_name = "[" + arthur + "] " + new_name
+                
             if name != new_name:
                 if ext:
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
+                    
+                # Append datetime if fileDir exist
                 if os.path.exists(os.path.join(arthur_path, new_fileDir)):
                     suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                     time.sleep(1)
@@ -303,13 +329,19 @@ class Formatter:
                     else:
                         new_fileDir = new_name
                 
-                os.rename(os.path.join(arthur_path, fileDir),
-                                os.path.join(arthur_path, new_fileDir))
+                # Rename fileDir
+                if not os.path.exists(os.path.join(arthur_path, new_fileDir)):
+                    os.rename(os.path.join(arthur_path, fileDir),
+                                    os.path.join(arthur_path, new_fileDir))
+                else:
+                    print("{}: Problem with renaming file, please check.".format(os.path.join(arthur_path, fileDir)))
+                    return
             else:
                 new_fileDir = fileDir
                         
             if os.path.isdir(os.path.join(arthur_path, new_fileDir)):
                 if len(os.listdir(os.path.join(arthur_path, new_fileDir))) == 0:
+                    # Remove empty folder
                     os.rmdir(os.path.join(arthur_path, new_fileDir))
                 else:
                     self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
@@ -320,6 +352,8 @@ if __name__ == '__main__':
     import tkinter as tk
     from tkinter import filedialog
     import ctypes
+    
+    # Make tk window clear in high dpi screen
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
     
     root = tk.Tk()
