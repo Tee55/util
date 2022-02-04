@@ -350,7 +350,6 @@ class Formatter:
                 else:
                     self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
             else:
-                print(os.path.join(arthur_path, new_fileDir))
                 formatter.cleanFile(os.path.join(arthur_path, new_fileDir))
 
 if __name__ == '__main__':
