@@ -8,6 +8,7 @@ import zipfile
 import rarfile
 import tarfile
 import io
+import string
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
@@ -283,19 +284,22 @@ class Formatter:
                 dirName = os.path.basename(arthur_path)
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
                     new_name = "[" + arthur + "] " + "thumbnails"
-                elif fileDir.lower().endswith(image_ext) and not isThumbnail:
+                elif fileDir.lower().endswith(image_ext):
                     chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if ele.lower().endswith(image_ext)]
                     new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
-                else:        
-                    noChapterNum = True
-                    for word in ["chapter", "chapters"]:
-                        num_list = re.findall(r'\d+', new_name[new_name.find(word)+1:])
-                        if num_list != []:
-                            new_name = " ".join([dirName, num_list[0]])
-                            noChapterNum = False
-                    if noChapterNum:
+                else:
+                    # find numbers in filename
+                    num_list = re.findall(r'\d+', new_name)
+                    if len(num_list) == 1:
+                        new_name = " ".join([dirName, num_list[0]])
+                    elif len(num_list) >= 2:
+                        alphabet_string = string.ascii_lowercase
+                        alphabet_list = list(alphabet_string)
+                        text_append = num_list[0] + alphabet_list[int(num_list[1])]
+                        new_name = " ".join([dirName, text_append])
+                    else:
                         chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
-                        new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
+                        new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])     
             else:
                 
                 # Remove common ending words in doujin
