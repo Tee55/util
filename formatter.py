@@ -257,6 +257,7 @@ class Formatter:
                     new_name = "[" + arthur + "] " + "thumbnails"
                 elif fileDir.lower().endswith(image_ext) and not isThumbnail:
                     chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if ele.lower().endswith(image_ext)]
+                    dirName = os.path.basename(arthur_path)
                     new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
                 else:
                     dirName = os.path.basename(arthur_path)
