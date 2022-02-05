@@ -52,9 +52,13 @@ class Formatter:
         for word in remove_list:
             name_output = name_output.split(word, 1)[0]
         
-        # Update datetime if there is datetime in string
+        # Remove datetime if there is datetime in string
         if re.search(r'\d{6}\s\d{6}', name_output):
             name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
+        
+        # Remove 6 digit (usually in doujin)
+        if re.search(r'\d{6}', name_output):
+            name_output = re.sub(r'\d{6}+', "", name_output)
         
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
