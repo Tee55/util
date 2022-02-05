@@ -56,9 +56,9 @@ class Formatter:
         if re.search(r'\d{6}\s\d{6}', name_output):
             name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
         
-        # Remove 6 digit (usually in doujin)
+        # Remove 6 digit (usually in doujin and hitomi.la)
         if re.search(r'\d{6}', name_output):
-            name_output = re.sub(r'\d{6}+', "", name_output)
+            name_output = re.sub(r'\d{5}+', "", name_output)
         
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
