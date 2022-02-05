@@ -222,7 +222,7 @@ class Formatter:
                     filename = os.path.basename(fileDirPath)
 
                     # Check image size
-                    if w > 1024 and h > 1024 and h <= 3*w:
+                    if w > 1024 and h > 1024:
                         image_pil.thumbnail(image_size)
                         isWrite = True
                             
