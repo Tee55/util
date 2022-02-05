@@ -4,5 +4,4 @@ python-slugify
 natsort
 rarfile
 tqdm
-moviepy
 pyinstaller
