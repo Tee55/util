@@ -28,3 +28,8 @@ Convert .avi, .mkv -> .mp4 video format
 
 ### Updater
 Update new file to destined directory. For destined directory format, please refer to reader project https://github.com/Tee55/reader.
+
+### Create stanalone executable
+```
+pyinstaller --onefile main.py
+```
