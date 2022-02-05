@@ -44,6 +44,7 @@ class Formatter:
         # Change to all lowercase 
         name_output = name_output.lower()
         
+        # Hitomi.la author end with etc
         if name_output.endswith("etc"):
             name_output = name_output.replace("etc", "")
         
@@ -56,7 +57,7 @@ class Formatter:
         if re.search(r'\d{6}\s\d{6}', name_output):
             name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
         
-        # Remove 6 digit (usually in doujin and hitomi.la)
+        # Remove 6 digit (usually in doujin and Hitomi.la)
         if re.search(r'\d{6}', name_output):
             name_output = re.sub(r'\d{5}+', "", name_output)
         
