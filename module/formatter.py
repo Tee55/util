@@ -44,8 +44,21 @@ class Formatter:
         # Change to all lowercase 
         name_output = name_output.lower()
         
+        if name_output.endswith("etc"):
+            name_output = name_output.replace("etc", "")
+        
+        # Remove common ending words in doujin
+        remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
+        for word in remove_list:
+            name_output = name_output.split(word, 1)[0]
+        
+        # Update datetime if there is datetime in string
+        if re.search(r'\d{6}\s\d{6}', name_output):
+            name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
+        
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
+        
         return name_output
 
     def clean(self, srcPath):
@@ -59,15 +72,20 @@ class Formatter:
 
                 # Renaming arthur name
                 if arthur != new_arthur:
-                    if new_arthur not in os.listdir(srcPath):
+                    
+                    if not os.path.exists(os.path.join(srcPath, new_arthur)):
                         os.rename(os.path.join(srcPath, arthur),
                                   os.path.join(srcPath, new_arthur))
                     else:
                         suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                         time.sleep(1)
                         new_arthur = " ".join([new_arthur, suffix])
-                        os.rename(os.path.join(srcPath, arthur),
-                                  os.path.join(srcPath, new_arthur))
+                        if not os.path.exists(os.path.join(srcPath, new_arthur)):
+                            os.rename(os.path.join(srcPath, arthur),
+                                    os.path.join(srcPath, new_arthur))
+                        else:
+                            print("{}: Problem with renaming file, please check.".format(os.path.join(srcPath, arthur)))
+                            pass
                         
                 # Renaming arthur items
                 self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
@@ -311,18 +329,6 @@ class Formatter:
                         chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
                         new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])     
             else:
-                
-                # Remove common ending words in doujin
-                remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored", "etc"]
-                for word in remove_list:
-                    new_name = new_name.split(word, 1)[0]
-                
-                # Update datetime if there is datetime in string
-                if re.search(r'\d{6}\s\d{6}', new_name):
-                    new_name = re.sub(r'\d{6}\s\d{6}', "", new_name)
-                
-                # Combine multiple whitespaces to one
-                new_name = " ".join(new_name.split())
                 
                 # add arthur name to the front
                 new_name = "[" + arthur + "] " + new_name
