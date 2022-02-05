@@ -282,11 +282,19 @@ class Formatter:
             if isChapter:
                 dirName = os.path.basename(arthur_path)
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
+                    # Thumbnail in chapter folder
                     new_name = "[" + arthur + "] " + "thumbnails"
                 elif fileDir.lower().endswith(image_ext):
-                    chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if ele.lower().endswith(image_ext)]
-                    new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
+                    # Images Chapter folder
+                    # find numbers in filename
+                    num_list = re.findall(r'\d+', new_name)
+                    if len(num_list) == 1:
+                        new_name = " ".join([dirName, num_list[0]])
+                    else:
+                        chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if ele.lower().endswith(image_ext)]
+                        new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
                 else:
+                    # Default Chapter folder
                     # find numbers in filename
                     num_list = re.findall(r'\d+', new_name)
                     if len(num_list) == 1:
