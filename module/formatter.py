@@ -137,26 +137,16 @@ class Formatter:
             image_pil = Image.open(filePath)
             image_pil = image_pil.convert('RGB')
             w, h = image_pil.size
-            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
+            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')) or w > 1024 and h > 1024:
                 image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                if os.path.exists(filePath):
+                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                if filename != name + ".webp" and os.path.exists(filePath):
                     os.remove(filePath)
-                    if not os.path.exists(os.path.join(dirPath, name + ".webp")):
-                        image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                    return
-            elif w > 1024 and h > 1024:
-                image_pil.thumbnail(image_size)
-                filename = os.path.basename(filePath)
-                name, ext = os.path.splitext(filename)
-                dirPath = os.path.dirname(filePath)
-                if os.path.exists(filePath):
-                    os.remove(filePath)
-                    if not os.path.exists(os.path.join(dirPath, name + ".webp")):
-                        image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                    return
+                return
             else:
                 # Perfect
                 return
@@ -178,11 +168,11 @@ class Formatter:
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                if os.path.exists(filePath):
+                if not os.path.exists(os.path.join(dirPath, name + ".gif")):
+                    image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
+                if filename != name + ".gif"  and os.path.exists(filePath):
                     os.remove(filePath)
-                    if not os.path.exists(os.path.join(dirPath, name + ".gif")):
-                        image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
-                    return
+                return
             else:
                 # Perfect
                 return
