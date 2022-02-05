@@ -15,7 +15,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES=True
 Image.MAX_IMAGE_PIXELS = None
 
 from tqdm import tqdm
-from moviepy.editor import VideoFileClip
 import shutil
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
@@ -165,15 +164,8 @@ class Formatter:
                 return
         elif filePath.lower().endswith(video_ext):
             if filePath.lower().endswith(('.avi', '.mkv')):
-                filename = os.path.basename(filePath)
-                name, ext = os.path.splitext(filename)
-                dirPath = os.path.dirname(filePath)
-                clip = VideoFileClip(filePath)
-                if os.path.exists(filePath):
-                    os.remove(filePath)
-                    if not os.path.exists(os.path.join(dirPath, name + ".mp4")):
-                        clip.write_videofile(os.path.join(dirPath, name + ".mp4"))
-                    return
+                print("{}: Please convert video to mp4 format.".format(filePath))
+                return
             elif filePath.lower().endswith('.mp4'):
                 # Perfect
                 return
