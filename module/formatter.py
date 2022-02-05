@@ -325,12 +325,6 @@ class Formatter:
                     num_list = re.findall(r'\d+', new_name)
                     if len(num_list) == 1:
                         new_name = " ".join([dirName, num_list[0]])
-                    elif len(num_list) >= 2:
-                        # Handle special chapter 1.5, 2.3, 8a
-                        alphabet_string = string.ascii_lowercase
-                        alphabet_list = list(alphabet_string)
-                        text_append = num_list[0] + alphabet_list[int(num_list[1])]
-                        new_name = " ".join([dirName, text_append])
                     else:
                         chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
                         new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])     
