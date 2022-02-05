@@ -200,10 +200,9 @@ class Formatter:
                     return
 
                 # Check image size
-                if w > 1024 and h > 1024:
-                    if h <= 3*w:
-                        image_pil.thumbnail(image_size)
-                        isWrite = True
+                if w > 1024 and h > 1024 and h <= 3*w:
+                    image_pil.thumbnail(image_size)
+                    isWrite = True
                         
                 # Check image mime types
                 if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
