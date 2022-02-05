@@ -71,7 +71,8 @@ class Formatter:
         for arthur in tqdm(os.listdir(srcPath), desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 # Remove empty folder
-                os.rmdir(os.path.join(srcPath, arthur))
+                if os.path.exists(os.path.join(srcPath, arthur)):
+                    os.rmdir(os.path.join(srcPath, arthur))
             else:
                 new_arthur = self.cleanName(arthur)
 
