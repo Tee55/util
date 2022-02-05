@@ -1,8 +1,8 @@
 progress
-flask
 Pillow
 python-slugify
 natsort
 rarfile
 tqdm
 moviepy
+pyinstaller
