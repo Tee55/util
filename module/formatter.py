@@ -186,36 +186,40 @@ class Formatter:
             if os.path.isdir(fileDirPath):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
-                filename = os.path.basename(fileDirPath)
-                try:
-                    image_pil = Image.open(zipObj.open(fileDirPath))
-                    image_pil = image_pil.convert('RGB')
-                    w, h = image_pil.size
-                except Exception as e:
-                    print("{}: {}".format(filePath, e))
-                    zipObj.close()
-                    new_zipObj.close()
-                    if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                        os.remove(os.path.join(temp_dirPath, "temp.zip"))
-                    return
-
-                # Check image size
-                if w > 1024 and h > 1024 and h <= 3*w:
-                    image_pil.thumbnail(image_size)
-                    isWrite = True
-                        
-                # Check image mime types
-                if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
-                    isWrite = True
                 
-                # Check if image file in root
-                if filename != fileDirPath:
-                    isWrite = True
+                # Check first image if it need to write
+                if image_index == 1 or isWrite == True:
+                    try:
+                        image_pil = Image.open(zipObj.open(fileDirPath))
+                        image_pil = image_pil.convert('RGB')
+                        w, h = image_pil.size
+                    except Exception as e:
+                        print("{}: {}".format(filePath, e))
+                        zipObj.close()
+                        new_zipObj.close()
+                        if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                            os.remove(os.path.join(temp_dirPath, "temp.zip"))
+                        return
+                
+                    filename = os.path.basename(fileDirPath)
+
+                    # Check image size
+                    if w > 1024 and h > 1024 and h <= 3*w:
+                        image_pil.thumbnail(image_size)
+                        isWrite = True
+                            
+                    # Check image mime types
+                    if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                        isWrite = True
                     
-                # Check if image filename in ascending order
-                name, ext = os.path.splitext(filename)
-                if name != str(image_index):
-                    isWrite = True
+                    # Check if image file in root
+                    if filename != fileDirPath:
+                        isWrite = True
+                        
+                    # Check if image filename in ascending order
+                    name, ext = os.path.splitext(filename)
+                    if name != str(image_index):
+                        isWrite = True
                     
                 if isWrite:
                     if write_index==image_index:
@@ -309,7 +313,7 @@ class Formatter:
             else:
                 
                 # Remove common ending words in doujin
-                remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
+                remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored", "etc"]
                 for word in remove_list:
                     new_name = new_name.split(word, 1)[0]
                 
