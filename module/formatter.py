@@ -23,6 +23,7 @@ zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 image_ext = ('.jpg', '.png', '.webp', '.jpeg')
 video_ext = ('.mp4', '.avi', '.mkv')
 image_size = (1024, 1024)
+temp_dirPath = "./temp/"
 
 class Formatter:
 
@@ -73,8 +74,14 @@ class Formatter:
                 self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
         
     def sep_arthur_name(self, name):
+        
+        # Get text inside []
         arthur = name[name.find("[")+1:name.find("]")]
+        
+        # Get text inside ()
         arthur = arthur[arthur.find("(")+1:arthur.find(")")]
+        
+        # Text after ] is item name
         item_name = name[name.find("]")+1:]
         if arthur != "" and item_name != "":
             arthur_output = self.cleanName(arthur)
@@ -179,7 +186,7 @@ class Formatter:
         # '.webp' h and w > 1024
         zip_filename = os.path.basename(filePath)
         dirPath = os.path.dirname(filePath)
-        new_zipObj = zipfile.ZipFile(os.path.join("temp/", "temp.zip"), 'w')
+        new_zipObj = zipfile.ZipFile(os.path.join(temp_dirPath, "temp.zip"), 'w')
         isWrite = False
         image_index = 1
         write_index = 1
@@ -196,8 +203,8 @@ class Formatter:
                     print("{}: {}".format(filePath, e))
                     zipObj.close()
                     new_zipObj.close()
-                    if os.path.exists(os.path.join("temp/", "temp.zip")):
-                        os.remove(os.path.join("temp/", "temp.zip"))
+                    if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                        os.remove(os.path.join(temp_dirPath, "temp.zip"))
                     return
 
                 # Check image size
@@ -229,8 +236,8 @@ class Formatter:
                         # Zip does not write all image file
                         zipObj.close()
                         new_zipObj.close()
-                        if os.path.exists(os.path.join("temp/", "temp.zip")):
-                            os.remove(os.path.join("temp/", "temp.zip"))
+                        if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                            os.remove(os.path.join(temp_dirPath, "temp.zip"))
                         print("{}: Internal filename conflict, please check.".format(filePath))
                         return
                     
@@ -244,13 +251,13 @@ class Formatter:
             if os.path.exists(filePath):
                 os.remove(filePath)
                 if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                    shutil.move(os.path.join("temp/", "temp.zip"), os.path.join(dirPath, zip_filename))
+                    shutil.move(os.path.join(temp_dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
                 else:
                     print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
                     return
         else:
-            if os.path.exists(os.path.join("temp/", "temp.zip")):
-                os.remove(os.path.join("temp/", "temp.zip"))
+            if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                os.remove(os.path.join(temp_dirPath, "temp.zip"))
 
 
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
@@ -359,21 +366,4 @@ class Formatter:
                 else:
                     self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
             else:
-                formatter.cleanFile(os.path.join(arthur_path, new_fileDir))
-
-if __name__ == '__main__':
-    import tkinter as tk
-    from tkinter import filedialog
-    import ctypes
-    
-    # Make tk window clear in high dpi screen
-    ctypes.windll.shcore.SetProcessDpiAwareness(1)
-    
-    root = tk.Tk()
-    root.call('tk', 'scaling', 4.0)
-    srcPath = filedialog.askdirectory()
-    print("Select source dir path: {}".format(srcPath))
-    root.destroy()
-
-    formatter = Formatter()
-    formatter.clean(srcPath)
+                self.cleanFile(os.path.join(arthur_path, new_fileDir))

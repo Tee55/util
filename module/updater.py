@@ -3,7 +3,7 @@ from tkinter import filedialog
 from tkinter import *
 import shutil
 from progress.bar import Bar
-from formatter import Formatter
+from module.formatter import Formatter
 import time
 import datetime
 
@@ -76,8 +76,3 @@ class Updater:
                 print("You already have: {}".format(filename))
             bar.next()
         bar.finish()
-
-
-if __name__ == '__main__':
-    updater = Updater()
-    updater.run()

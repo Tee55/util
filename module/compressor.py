@@ -4,9 +4,7 @@ from tkinter import *
 import zipfile
 import shutil
 from progress.bar import Bar
-from formatter import Formatter
-from datetime import datetime
-import time
+from module.formatter import Formatter
 
 image_ext = ('.jpg', '.png', '.webp')
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr', '.cbx')
@@ -78,8 +76,3 @@ class Compressor:
             for dir in dirs:
                 if len(os.listdir(os.path.join(root, dir))) == 0:
                     os.rmdir(os.path.join(root, dir))
-
-
-if __name__ == '__main__':
-    compressor = Compressor()
-    compressor.run()
