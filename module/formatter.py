@@ -52,6 +52,10 @@ class Formatter:
         remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
         for word in remove_list:
             name_output = name_output.replace(word, "")
+            
+        # Remove datetime if there is datetime in string (Also update datetime)
+        if re.search(r'\d{6}\s\d{6}', name_output):
+            name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
         
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
@@ -305,8 +309,20 @@ class Formatter:
                     os.rename(os.path.join(arthur_path, fileDir),
                                     os.path.join(arthur_path, new_fileDir))
                 else:
-                    print("{}: File already exist.".format(os.path.join(arthur_path, new_fileDir)))
-                    return
+                    suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+                    time.sleep(1)
+                    new_name = " ".join([new_name, suffix])
+                    if os.path.isfile(os.path.join(arthur_path, fileDir)):
+                        name, ext = os.path.splitext(fileDir)
+                        new_fileDir = new_name + ext
+                    else:
+                        new_fileDir = new_name
+                    if not os.path.exists(os.path.join(arthur_path, new_fileDir)):
+                        os.rename(os.path.join(arthur_path, fileDir),
+                                os.path.join(arthur_path, new_fileDir))
+                    else:
+                        print("{}: Problem with renaming file, please check.".format(os.path.join(arthur_path, fileDir)))
+                        pass
             else:
                 new_fileDir = fileDir
                         
