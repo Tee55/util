@@ -25,7 +25,7 @@ temp_dirPath = "./temp/"
 
 class Formatter:
 
-    def cleanName(self, name):
+    def cleanName(self, name, isAuthor=False):
         
         # Remove head and tail whitespaces
         name = name.strip()
@@ -43,9 +43,10 @@ class Formatter:
         # Change to all lowercase 
         name_output = name_output.lower()
         
-        # Hitomi.la author end with etc
-        if name_output.endswith("etc"):
-            name_output = name_output.replace("etc", "")
+        if isAuthor:
+            # Hitomi.la author end with etc
+            if name_output.endswith("etc"):
+                name_output = name_output.replace("etc", "")
         
         # Remove common ending words in doujin
         remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
@@ -65,7 +66,7 @@ class Formatter:
                 if os.path.exists(os.path.join(srcPath, arthur)):
                     os.rmdir(os.path.join(srcPath, arthur))
             else:
-                new_arthur = self.cleanName(arthur)
+                new_arthur = self.cleanName(arthur, isAuthor=True)
 
                 # Renaming arthur name
                 if arthur != new_arthur:
@@ -98,7 +99,7 @@ class Formatter:
         # Text after ] is item name
         item_name = name[name.find("]")+1:]
         if arthur != "" and item_name != "":
-            arthur_output = self.cleanName(arthur)
+            arthur_output = self.cleanName(arthur, isAuthor=True)
             item_name = self.cleanName(item_name)
             return arthur_output, item_name
         else:
