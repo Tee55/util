@@ -293,6 +293,9 @@ class Formatter:
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
                     # Thumbnail in chapter folder
                     new_name = "[" + arthur + "] " + "thumbnail"
+                elif not re.search(r'\d+[a-z]?$', new_name):
+                    print("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(arthur_path, fileDir)))
+                    pass
             else:
                 # add arthur name to the front
                 new_name = "[" + arthur + "] " + new_name
