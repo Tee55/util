@@ -8,7 +8,6 @@ import zipfile
 import rarfile
 import tarfile
 import io
-import string
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
@@ -58,8 +57,8 @@ class Formatter:
             name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
         
         # Remove 6 digit (usually in doujin and Hitomi.la)
-        if re.search(r'\d{6}', name_output):
-            name_output = re.sub(r'\d{5}+', "", name_output)
+        if re.search(r'\d{4,9}', name_output):
+            name_output = re.sub(r'\d{4,9}', "", name_output)
         
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
@@ -68,7 +67,7 @@ class Formatter:
 
     def clean(self, srcPath):
 
-        for arthur in tqdm(os.listdir(srcPath), desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+        for arthur in tqdm(os.listdir(srcPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
                 # Remove empty folder
                 if os.path.exists(os.path.join(srcPath, arthur)):
@@ -142,8 +141,9 @@ class Formatter:
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
-                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                
+                # Save new or override old .webp
+                image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                 if filename != name + ".webp" and os.path.exists(filePath):
                     os.remove(filePath)
                 return
@@ -168,8 +168,9 @@ class Formatter:
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                if not os.path.exists(os.path.join(dirPath, name + ".gif")):
-                    image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
+                
+                # Save new or override old .gif
+                image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
                 if filename != name + ".gif"  and os.path.exists(filePath):
                     os.remove(filePath)
                 return
@@ -196,7 +197,7 @@ class Formatter:
         isWrite = False
         image_index = 1
         write_index = 1
-        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Image Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(fileDirPath):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
@@ -275,14 +276,11 @@ class Formatter:
             desc = "Chapter Folder Progress"
             
             # Only one image in Chapter Folder mean it is thumbnail
-            count = 0
-            isThumbnail = True
-            for chapFile in os.listdir(arthur_path):
-                if chapFile.lower().endswith(image_ext):
-                    count += 1
-                if count >= 2:
-                    isThumbnail = False
-                    break
+            imageList = [chapFile for chapFile in os.listdir(arthur_path) if chapFile.lower().endswith(image_ext)]
+            if len(os.listdir(arthur_path)) >= 1 and len(imageList) == 1:
+                isThumbnail = True
+            else:
+                isThumbnail = False
         else:
             desc = "Author Folder Progress"
         
@@ -292,34 +290,14 @@ class Formatter:
                 name = fileDir 
             else:
                 name = os.path.splitext(fileDir)[0]
-                
-            _, new_name = self.sep_arthur_name(name)
             
+            # Sep filename and arthur from format '[author|artist] filename.ext'
+            _, new_name = self.sep_arthur_name(name)
             if isChapter:
-                dirName = os.path.basename(arthur_path)
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
                     # Thumbnail in chapter folder
-                    new_name = "[" + arthur + "] " + "thumbnails"
-                elif fileDir.lower().endswith(image_ext):
-                    # Images Chapter folder
-                    # find numbers in filename
-                    num_list = re.findall(r'\d+', new_name)
-                    if len(num_list) == 1:
-                        new_name = " ".join([dirName, num_list[0]])
-                    else:
-                        chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if ele.lower().endswith(image_ext)]
-                        new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])
-                else:
-                    # Default Chapter folder
-                    # find numbers in filename
-                    num_list = re.findall(r'\d+', new_name)
-                    if len(num_list) == 1:
-                        new_name = " ".join([dirName, num_list[0]])
-                    else:
-                        chapFileList = [ele for ele in natsorted(os.listdir(arthur_path)) if not ele.lower().endswith(image_ext)]
-                        new_name = " ".join([dirName, str(chapFileList.index(fileDir)+1)])     
+                    new_name = "[" + arthur + "] " + "thumbnail"
             else:
-                
                 # add arthur name to the front
                 new_name = "[" + arthur + "] " + new_name
                 
