@@ -296,9 +296,9 @@ class Formatter:
                 elif not re.search(r'\d+[a-z]?$', new_name):
                     print("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(arthur_path, fileDir)))
                     pass
-            else:
-                # add arthur name to the front
-                new_name = "[" + arthur + "] " + new_name
+                
+            # add arthur name to the front
+            new_name = "[" + arthur + "] " + new_name
                 
             if name != new_name:
                 if os.path.isfile(os.path.join(arthur_path, fileDir)):
