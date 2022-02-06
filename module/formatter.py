@@ -285,12 +285,11 @@ class Formatter:
             desc = "Author Folder Progress"
         
         for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
-    
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
                 name = fileDir 
             else:
                 name = os.path.splitext(fileDir)[0]
-            
+                
             # Sep filename and arthur from format '[author|artist] filename.ext'
             _, new_name = self.sep_arthur_name(name)
             if isChapter:
@@ -307,23 +306,13 @@ class Formatter:
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-                    
-                # Append datetime if fileDir exist
-                if os.path.exists(os.path.join(arthur_path, new_fileDir)):
-                    suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                    time.sleep(1)
-                    new_name = " ".join([new_name, suffix])
-                    if os.path.isfile(os.path.join(arthur_path, fileDir)):
-                        new_fileDir = new_name + ext
-                    else:
-                        new_fileDir = new_name
                 
                 # Rename fileDir
                 if not os.path.exists(os.path.join(arthur_path, new_fileDir)):
                     os.rename(os.path.join(arthur_path, fileDir),
                                     os.path.join(arthur_path, new_fileDir))
                 else:
-                    print("{}: Problem with renaming file, please check.".format(os.path.join(arthur_path, fileDir)))
+                    print("{}: File already exist.".format(os.path.join(arthur_path, new_fileDir)))
                     return
             else:
                 new_fileDir = fileDir
