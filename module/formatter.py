@@ -49,13 +49,13 @@ class Formatter:
                 name_output = name_output.replace("etc", "")
         
         # Remove common ending words in doujin
-        remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
+        remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
         for word in remove_list:
             name_output = name_output.replace(word, "")
             
         # Remove datetime if there is datetime in string (Also update datetime)
-        if re.search(r'\d{6}\s\d{6}', name_output):
-            name_output = re.sub(r'\d{6}\s\d{6}', "", name_output)
+        if re.search(r'\d{6}\s\d{6}$', name_output):
+            name_output = re.sub(r'\d{6}\s\d{6}$', "", name_output)
         
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
