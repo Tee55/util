@@ -50,7 +50,7 @@ class Formatter:
         # Remove common ending words in doujin
         remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200", "uncensored"]
         for word in remove_list:
-            name_output = name_output.split(word, 1)[0]
+            name_output = name_output.replace(word, "")
         
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
