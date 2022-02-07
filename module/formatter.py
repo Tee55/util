@@ -9,6 +9,8 @@ import rarfile
 import tarfile
 import io
 import math
+import ffmpeg
+import filetype
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
@@ -45,11 +47,11 @@ class Formatter:
         name_output = name_output.lower()
         
         if isAuthor:
-            # Hitomi.la author end with etc
+            # Hitomi.la website's author sometime end with etc
             if name_output.endswith("etc"):
                 name_output = name_output.replace("etc", "")
         
-        # Remove common ending words in doujin
+        # Remove common end words in doujin
         remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
         for word in remove_list:
             name_output = name_output.replace(word, "")
@@ -67,10 +69,12 @@ class Formatter:
 
         for arthur in tqdm(os.listdir(srcPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
+                
                 # Remove empty folder
                 if os.path.exists(os.path.join(srcPath, arthur)):
                     os.rmdir(os.path.join(srcPath, arthur))
             else:
+                # Get cleaned author name
                 new_arthur = self.cleanName(arthur, isAuthor=True)
 
                 # Renaming arthur name
@@ -104,10 +108,14 @@ class Formatter:
         # Text after ] is item name
         item_name = name[name.find("]")+1:]
         if arthur != "" and item_name != "":
+            # Get cleaned author name
             arthur_output = self.cleanName(arthur, isAuthor=True)
+            
+            # Get cleaned item name
             item_name = self.cleanName(item_name)
             return arthur_output, item_name
         else:
+            # Get cleaned item name
             name_output = self.cleanName(name)
             return None, name_output
         
@@ -134,16 +142,31 @@ class Formatter:
             image_pil = Image.open(filePath)
             image_pil = image_pil.convert('RGB')
             w, h = image_pil.size
-            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')) or w > 1024 and h > 1024:
+            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
                 image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
                 
-                # Save new or override old .webp
-                image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                if filename != name + ".webp" and os.path.exists(filePath):
+                # Check if .webp exist or not
+                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                else:
+                    print("{}: There is already .webp file, please check.".format(filePath))
+                    return
+                    
+                # Remove old file
+                if os.path.exists(filePath):
                     os.remove(filePath)
+                return
+            elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
+                image_pil.thumbnail(image_size)
+                filename = os.path.basename(filePath)
+                name, ext = os.path.splitext(filename)
+                dirPath = os.path.dirname(filePath)
+                
+                # Override old .webp
+                image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                 return
             else:
                 # Perfect
@@ -152,9 +175,9 @@ class Formatter:
             image_pil = Image.open(filePath)
             frames = ImageSequence.Iterator(image_pil)
             
-            # Check size only first frame
+            # Check size only first frame (Save time)
             w, h = frames[0].size
-            
+    
             if w > 1024 and h > 1024:
                 def thumbnails(frames):
                     for frame in frames:
@@ -167,147 +190,153 @@ class Formatter:
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
                 
-                # Save new or override old .gif
+                # Override old .gif
                 image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
-                if filename != name + ".gif"  and os.path.exists(filePath):
-                    os.remove(filePath)
                 return
             else:
                 # Perfect
                 return
         elif filePath.lower().endswith(video_ext):
             if filePath.lower().endswith(('.avi', '.mkv')):
-                print("{}: Please convert video to mp4 format.".format(filePath))
+                filename = os.path.basename(filePath)
+                name, ext = os.path.splitext(filename)
+                dirPath = os.path.dirname(filePath)
+                stream = ffmpeg.input(filePath)
+                stream = ffmpeg.output(stream, os.path.join(dirPath, name + ".mp4"))
+                ffmpeg.run(stream)
+                
+                # Remove old file
+                if os.path.exists(filePath):
+                    os.remove(filePath)
                 return
             elif filePath.lower().endswith('.mp4'):
                 # Perfect
                 return
         else:
-            print("File format unknown: {}".format(filePath))
-            return
+            kind = filetype.guess(filePath)
+            if kind is None:
+                print("{}: File format unknown.".format(filePath))
+                return
+            else:
+                print("{}: We do not support {}.".format(filePath, kind.mime))
         
-        # Clean if there is dir or '.jpg', '.png', '.jpeg' in archieve
-        # .webp' is not in root
-        # '.webp' h and w > 1024
         zip_filename = os.path.basename(filePath)
         dirPath = os.path.dirname(filePath)
         new_zipObj = zipfile.ZipFile(os.path.join(temp_dirPath, "temp.zip"), 'w')
         isWrite = False
         isManhwa = False
         
-        # image_index and write_index will ensure that every images are writed
-        image_index = 1
-        write_index = 1
         combined_image_height = 0
-        combined_image_list = []
+        imageList = []
         
-        for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+        for fileDirPath in natsorted(zipObj.namelist()):
             if os.path.isdir(fileDirPath):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
                 
                 # Check first image if it need to write (Save time)
-                if image_index == 1 or isWrite == True:
-                    try:
-                        image_pil = Image.open(zipObj.open(fileDirPath))
-                        image_pil = image_pil.convert('RGB')
-                        w, h = image_pil.size
-                    except Exception as e:
-                        print("{}: {}".format(filePath, e))
-                        zipObj.close()
-                        new_zipObj.close()
-                        if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                            os.remove(os.path.join(temp_dirPath, "temp.zip"))
-                        return
-                
-                    filename = os.path.basename(fileDirPath)
-                    name, ext = os.path.splitext(filename)
-                    
-                    # Check all conditions
-                    if w > 1024 and h > 1024 and h < 3*w:
-                        isWrite = True
-                    elif h > 1024 and h >= 3*w:
-                        combined_image_width = w
-                        combined_image_height += h
-                        combined_image_list.append(image_pil)
-                        isManhwa = True
-                    elif filename.lower().endswith(('.jpg', '.png', '.jpeg')):
-                        isWrite = True
-                    elif filename != fileDirPath:
-                        isWrite = True
-                    elif name != str(image_index):
-                        isWrite = True
-                
-                # Write image in temp zip
-                if isWrite and not isManhwa:
-                    if write_index==image_index:
-                        image_pil.thumbnail(image_size)
-                        image_byte = io.BytesIO()
-                        image_pil.save(image_byte, "webp", quality=100)
-                        new_zipObj.writestr(str(write_index) + ".webp", image_byte.getvalue())
-                        write_index += 1
-                    else:
-                        # Zip does not write all image file
-                        zipObj.close()
-                        new_zipObj.close()
-                        if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                            os.remove(os.path.join(temp_dirPath, "temp.zip"))
-                        print("{}: Internal filename conflict, please check.".format(filePath))
-                        return
-                    
-                image_index += 1
-        
-        if isManhwa:
-            combined_image = Image.new('RGB', (combined_image_width, combined_image_height))
-            y_offset = 0
-            for image_pil in combined_image_list:
-                w, h = image_pil.size
-                
-                # Ensure that it is all images have same width
-                if w == combined_image_width:
-                    combined_image.paste(image_pil, (0, y_offset))
-                    y_offset += h
-                else:
-                    print("{}: Images width not equally, please check.".format(filePath))
+                try:
+                    image_pil = Image.open(zipObj.open(fileDirPath))
+                    image_pil = image_pil.convert('RGB')
+                    imageList.append(image_pil)
+                    w, h = image_pil.size
+                except Exception as e:
+                    print("{}: {}".format(filePath, e))
+                    zipObj.close()
+                    new_zipObj.close()
+                    if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                        os.remove(os.path.join(temp_dirPath, "temp.zip"))
                     return
-                    
-            # Crop each section to specific height
-            slices = int(math.ceil(combined_image_height/image_size[1]))
-            count = 1
-            y = 0
-            crop_images = []
-            for _ in range(slices):
-                #if we are at the end, set the lower bound to be the bottom of the image
-                if count == slices:
-                    lower = combined_image_height
-                else:
-                    lower = int(count * image_size[1])
-
-                bbox = (0, y, combined_image_width, lower)
-                crop_image = combined_image.crop(bbox)
-                crop_images.append(crop_image)
-                y += image_size[1]
-                count +=1
             
-            for index, crop_image in enumerate(crop_images):
-                image_byte = io.BytesIO()
-                crop_image.save(image_byte, "webp", quality=100)
-                new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
-        
+                filename = os.path.basename(fileDirPath)
+                name, ext = os.path.splitext(filename)
+                
+                # Check all conditions
+                if w > 1024 and h > 1024 and h < 3*w:
+                    isWrite = True
+                elif h > 1024 and h >= 3*w:
+                    combined_image_width = w
+                    combined_image_height += h
+                    isWrite = True
+                    isManhwa = True   
+                elif filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                    isWrite = True
+                elif filename != fileDirPath:
+                    isWrite = True
+                elif name != "1":
+                    isWrite = True
                     
+                if not isWrite:
+                    break
+                
+        if isWrite and len(imageList) != 0:
+            if not isManhwa:
+                for index, image_pil in enumerate(tqdm(imageList, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
+                    image_pil.thumbnail(image_size)
+                    image_byte = io.BytesIO()
+                    image_pil.save(image_byte, "webp", quality=100)
+                    new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
+            else:
+                combined_image = Image.new('RGB', (combined_image_width, combined_image_height))
+                y_offset = 0
+                for image_pil in imageList:
+                    w, h = image_pil.size
+                    
+                    # Ensure that it is all images have same width
+                    if w == combined_image_width:
+                        combined_image.paste(image_pil, (0, y_offset))
+                        y_offset += h
+                    else:
+                        image_pil = image_pil.resize((combined_image_width, int(h * (combined_image_width/w))))
+                        w, h = image_pil.size
+                        combined_image.paste(image_pil, (0, y_offset))
+                        y_offset += h
+                        
+                # Crop each section to specific height
+                slices = int(math.ceil(combined_image_height/image_size[1]))
+                count = 1
+                y = 0
+                crop_images = []
+                for _ in range(slices):
+                    #if we are at the end, set the lower bound to be the bottom of the image
+                    if count == slices:
+                        lower = combined_image_height
+                    else:
+                        lower = int(count * image_size[1])
+
+                    bbox = (0, y, combined_image_width, lower)
+                    crop_image = combined_image.crop(bbox)
+                    crop_images.append(crop_image)
+                    y += image_size[1]
+                    count +=1
+                
+                for index, crop_image in enumerate(tqdm(crop_images, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
+                    image_byte = io.BytesIO()
+                    crop_image.save(image_byte, "webp", quality=100)
+                    new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
+        elif isWrite and len(imageList) == 0:
+            print("{}: Can not find image file in archieve.".format(filePath))
+            return
+            
         zipObj.close()
         new_zipObj.close()
         
         # Remove file -> Rename temp to file
         if isWrite:
             if os.path.exists(filePath):
+                
+                # Remove old file
                 os.remove(filePath)
+                
+                # Check if file exist
                 if not os.path.exists(os.path.join(dirPath, zip_filename)):
+                    # Move file from temp folder
                     shutil.move(os.path.join(temp_dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
                 else:
-                    print("File {} already exist".format(os.path.join(dirPath, zip_filename)))
+                    print("{}: File already exist".format(os.path.join(dirPath, zip_filename)))
                     return
         else:
+            # Remove temp file
             if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
                 os.remove(os.path.join(temp_dirPath, "temp.zip"))
 
@@ -315,6 +344,7 @@ class Formatter:
     def cleanRecur(self, arthur, arthur_path, isChapter=False):
         
         if isChapter:
+            # Progress description
             desc = "Chapter Folder Progress"
             
             # Only one image in Chapter Folder mean it is thumbnail
@@ -324,6 +354,7 @@ class Formatter:
             else:
                 isThumbnail = False
         else:
+            # Progress description
             desc = "Author Folder Progress"
         
         for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
@@ -336,6 +367,7 @@ class Formatter:
             _, new_name = self.sep_arthur_name(name)
             if isChapter:
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
+                    
                     # Thumbnail in chapter folder
                     new_name = "[" + arthur + "] " + "thumbnail"
                 elif not re.search(r'\d+[a-z]?$', new_name):

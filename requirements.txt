@@ -5,3 +5,5 @@ natsort
 rarfile
 tqdm
 pyinstaller
+ffmpeg-python
+filetype
