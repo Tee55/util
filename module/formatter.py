@@ -91,7 +91,7 @@ class Formatter:
                             os.rename(os.path.join(srcPath, arthur),
                                     os.path.join(srcPath, new_arthur))
                         else:
-                            print("{}: Problem with renaming file, please check.".format(os.path.join(srcPath, arthur)))
+                            tqdm.write("{}: Problem with renaming file, please check.".format(os.path.join(srcPath, arthur)))
                             pass
                         
                 # Renaming arthur items
@@ -124,19 +124,19 @@ class Formatter:
             try:
                 zipObj = zipfile.ZipFile(filePath, 'r')
             except Exception as e:
-                print("{}: {}".format(filePath, e))
+                tqdm.write("{}: {}".format(filePath, e))
                 return
         elif rarfile.is_rarfile(filePath):
             try:
                 zipObj = rarfile.RarFile(filePath, 'r')
             except Exception as e:
-                print("{}: {}".format(filePath, e))
+                tqdm.write("{}: {}".format(filePath, e))
                 return
         elif tarfile.is_tarfile(filePath):
             try:
                 zipObj = tarfile.TarFile(filePath, 'r')
             except Exception as e:
-                print("{}: {}".format(filePath, e))
+                tqdm.write("{}: {}".format(filePath, e))
                 return
         elif filePath.lower().endswith(image_ext):
             image_pil = Image.open(filePath)
@@ -151,14 +151,13 @@ class Formatter:
                 # Check if .webp exist or not
                 if not os.path.exists(os.path.join(dirPath, name + ".webp")):
                     image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
-                else:
-                    print("{}: There is already .webp file, please check.".format(filePath))
+                    # Remove old file
+                    if os.path.exists(filePath):
+                        os.remove(filePath)
                     return
-                    
-                # Remove old file
-                if os.path.exists(filePath):
-                    os.remove(filePath)
-                return
+                else:
+                    tqdm.write("{}: There is already .webp file, please check.".format(filePath))
+                    return
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
                 image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
@@ -215,10 +214,10 @@ class Formatter:
         else:
             kind = filetype.guess(filePath)
             if kind is None:
-                print("{}: File format unknown.".format(filePath))
+                tqdm.write("{}: File format unknown.".format(filePath))
                 return
             else:
-                print("{}: We do not support {}.".format(filePath, kind.mime))
+                tqdm.write("{}: We do not support {}.".format(filePath, kind.mime))
         
         zip_filename = os.path.basename(filePath)
         dirPath = os.path.dirname(filePath)
@@ -241,7 +240,7 @@ class Formatter:
                     imageList.append(image_pil)
                     w, h = image_pil.size
                 except Exception as e:
-                    print("{}: {}".format(filePath, e))
+                    tqdm.write("{}: {}".format(filePath, e))
                     zipObj.close()
                     new_zipObj.close()
                     if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
@@ -315,7 +314,7 @@ class Formatter:
                     crop_image.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
         elif isWrite and len(imageList) == 0:
-            print("{}: Can not find image file in archieve.".format(filePath))
+            tqdm.write("{}: Can not find image file in archieve.".format(filePath))
             return
             
         zipObj.close()
@@ -333,7 +332,7 @@ class Formatter:
                     # Move file from temp folder
                     shutil.move(os.path.join(temp_dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
                 else:
-                    print("{}: File already exist".format(os.path.join(dirPath, zip_filename)))
+                    tqdm.write("{}: File already exist".format(os.path.join(dirPath, zip_filename)))
                     return
         else:
             # Remove temp file
@@ -377,7 +376,7 @@ class Formatter:
                         # Not include special chapter like 2a, 3b, 4c
                         chapters_index_list.append(int(match_list[0]))
                 else:
-                    print("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(arthur_path, fileDir)))
+                    tqdm.write("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(arthur_path, fileDir)))
                     pass
                 
             # add arthur name to the front
@@ -407,7 +406,7 @@ class Formatter:
                         os.rename(os.path.join(arthur_path, fileDir),
                                 os.path.join(arthur_path, new_fileDir))
                     else:
-                        print("{}: Problem with renaming file, please check.".format(os.path.join(arthur_path, fileDir)))
+                        tqdm.write("{}: Problem with renaming file, please check.".format(os.path.join(arthur_path, fileDir)))
                         pass
             else:
                 new_fileDir = fileDir
@@ -423,6 +422,10 @@ class Formatter:
         
         # Check if all chapter complete (Not include special chapter)
         if isChapter:
-            for index, chapters_index in enumerate(natsorted(chapters_index_list)):
-                if index+1 != chapters_index:
-                    print("{}: Some chapter is missing.".format(os.path.join(arthur_path, new_fileDir)))
+            missing_chapter = [] 
+            for index in range(1, natsorted(chapters_index_list)[-1]+1):
+                if index not in chapters_index_list:
+                    missing_chapter.append(index)
+                    
+            if len(missing_chapter) != 0:
+                tqdm.write("{}: Chapter {} is missing.".format(arthur_path, missing_chapter))
