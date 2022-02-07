@@ -27,6 +27,11 @@ image_size = (1024, 1024)
 temp_dirPath = "./temp/"
 
 class Formatter:
+    
+    def __init__(self):
+        if os.path.exists(os.path.join(temp_dirPath, "missing.txt")):
+            with open(os.path.join(temp_dirPath, "missing.txt"), "r+") as f:
+                f.truncate(0)
 
     def cleanName(self, name, isAuthor=False):
         
@@ -432,3 +437,4 @@ class Formatter:
                 tqdm.write(missing_text)
                 with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
                     f.write(missing_text)
+                    f.write("\n")
