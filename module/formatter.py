@@ -8,6 +8,7 @@ import zipfile
 import rarfile
 import tarfile
 import io
+import math
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
@@ -192,14 +193,20 @@ class Formatter:
         dirPath = os.path.dirname(filePath)
         new_zipObj = zipfile.ZipFile(os.path.join(temp_dirPath, "temp.zip"), 'w')
         isWrite = False
+        isManhwa = False
+        
+        # image_index and write_index will ensure that every images are writed
         image_index = 1
         write_index = 1
+        combined_image_height = 0
+        combined_image_list = []
+        
         for fileDirPath in tqdm(natsorted(zipObj.namelist()), leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(fileDirPath):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
                 
-                # Check first image if it need to write
+                # Check first image if it need to write (Save time)
                 if image_index == 1 or isWrite == True:
                     try:
                         image_pil = Image.open(zipObj.open(fileDirPath))
@@ -214,30 +221,30 @@ class Formatter:
                         return
                 
                     filename = os.path.basename(fileDirPath)
-
-                    # Check image size
-                    if w > 1024 and h > 1024:
-                        image_pil.thumbnail(image_size)
-                        isWrite = True
-                            
-                    # Check image mime types
-                    if filename.lower().endswith(('.jpg', '.png', '.jpeg')):
-                        isWrite = True
-                    
-                    # Check if image file in root
-                    if filename != fileDirPath:
-                        isWrite = True
-                        
-                    # Check if image filename in ascending order
                     name, ext = os.path.splitext(filename)
-                    if name != str(image_index):
-                        isWrite = True
                     
-                if isWrite:
+                    # Check all conditions
+                    if w > 1024 and h > 1024 and h < 3*w:
+                        isWrite = True
+                    elif h > 1024 and h >= 3*w:
+                        combined_image_width = w
+                        combined_image_height += h
+                        combined_image_list.append(image_pil)
+                        isManhwa = True
+                    elif filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                        isWrite = True
+                    elif filename != fileDirPath:
+                        isWrite = True
+                    elif name != str(image_index):
+                        isWrite = True
+                
+                # Write image in temp zip
+                if isWrite and not isManhwa:
                     if write_index==image_index:
+                        image_pil.thumbnail(image_size)
                         image_byte = io.BytesIO()
                         image_pil.save(image_byte, "webp", quality=100)
-                        new_zipObj.writestr(str(image_index) + ".webp", image_byte.getvalue())
+                        new_zipObj.writestr(str(write_index) + ".webp", image_byte.getvalue())
                         write_index += 1
                     else:
                         # Zip does not write all image file
@@ -249,6 +256,44 @@ class Formatter:
                         return
                     
                 image_index += 1
+        
+        if isManhwa:
+            combined_image = Image.new('RGB', (combined_image_width, combined_image_height))
+            y_offset = 0
+            for image_pil in combined_image_list:
+                w, h = image_pil.size
+                
+                # Ensure that it is all images have same width
+                if w == combined_image_width:
+                    combined_image.paste(image_pil, (0, y_offset))
+                    y_offset += h
+                else:
+                    print("{}: Images width not equally, please check.".format(filePath))
+                    return
+                    
+            # Crop each section to specific height
+            slices = int(math.ceil(combined_image_height/image_size[1]))
+            count = 1
+            y = 0
+            crop_images = []
+            for _ in range(slices):
+                #if we are at the end, set the lower bound to be the bottom of the image
+                if count == slices:
+                    lower = combined_image_height
+                else:
+                    lower = int(count * image_size[1])
+
+                bbox = (0, y, combined_image_width, lower)
+                crop_image = combined_image.crop(bbox)
+                crop_images.append(crop_image)
+                y += image_size[1]
+                count +=1
+            
+            for index, crop_image in enumerate(crop_images):
+                image_byte = io.BytesIO()
+                crop_image.save(image_byte, "webp", quality=100)
+                new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
+        
                     
         zipObj.close()
         new_zipObj.close()
