@@ -357,6 +357,7 @@ class Formatter:
             # Progress description
             desc = "Author Folder Progress"
         
+        chapters_index_list = []
         for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(os.path.join(arthur_path, fileDir)):
                 name = fileDir 
@@ -370,7 +371,12 @@ class Formatter:
                     
                     # Thumbnail in chapter folder
                     new_name = "[" + arthur + "] " + "thumbnail"
-                elif not re.search(r'\d+[a-z]?$', new_name):
+                elif re.search(r'\d+[a-z]?$', new_name):
+                    match_list = re.findall(r'\d+$', new_name)
+                    if len(match_list) >= 1:
+                        # Not include special chapter like 2a, 3b, 4c
+                        chapters_index_list.append(int(match_list[0]))
+                else:
                     print("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(arthur_path, fileDir)))
                     pass
                 
@@ -414,3 +420,8 @@ class Formatter:
                     self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
             else:
                 self.cleanFile(os.path.join(arthur_path, new_fileDir))
+        
+        if isChapter:
+            for index, chapters_index in enumerate(natsorted(chapters_index_list)):
+                if index+1 != chapters_index:
+                    print("{}: Some chapter is missing.".format(os.path.join(arthur_path, new_fileDir)))
