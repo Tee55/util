@@ -47,7 +47,7 @@ class Compressor:
             if ext.lower().endswith(image_ext):
                 # Images
                 dirPath = os.path.dirname(fullPath)
-                zipPath = os.path.join(srcPath, arthur, name + ".cbz")
+                zipPath = os.path.join(srcPath, arthur, name + ".zip")
                 zipobj = zipfile.ZipFile(zipPath, "w")
 
                 for image_file in os.listdir(dirPath):
@@ -61,7 +61,7 @@ class Compressor:
                     os.rmdir(dirPath)
             elif ext.lower().endswith(zip_ext):
                 # zip, rar, cbz, cbx, cbr
-                movePath = os.path.join(srcPath, arthur, new_name + ".cbz")
+                movePath = os.path.join(srcPath, arthur, new_name + ext)
                 if not os.path.exists(movePath):
                     print("Move zipfile from {} to {}".format(fullPath, movePath))
                     shutil.move(fullPath, movePath)

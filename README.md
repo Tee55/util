@@ -5,34 +5,73 @@
 pip install -r requirements.txt
 ```
 
-### Before Usage (Please read and understand)
-Source Directory Structure
+### Keywords
 ```
-My Source/                  # Source Folder
-    ├── title01/            # Item File
-    │      ├── 01.jpg       # Image File
-    │      ├── 02.jpg       # Image File
-    │      ├── 03.jpg       # Image File
-    │      └── ...          # Content Folder
-    └── title02/            # Content Folder
+FILE_FORMAT = '[author|artist] name.ext'
+IMAGE_SIZE = 1024px (both width and height)
 ```
 
 ### Compressor
-* Find all file in source directory as well as remove empty directory
-* Create an author folder in source folder by using file's parent directory name -> (if fail) -> From filename itself -> (if fail) -> Author is "unknown". 
-* Rename file (zip, rar, cbz, cbx and cbr only) to format '[author|artist] filename.ext'. 
-* If it is images, then compress to single zip file (with rename as .cbz). 
-* If it is zip, rar, cbz, cbr or cbx, then move to author folder.
+SOURCE_DIRECTORY Structure
+```
+My Source/                  # SOURCE_DIRECTORY
+    ├── title01/            # ITEM_FOLDER
+    │      ├── 01.jpg       # Image File
+    │      ├── 02.jpg       # Image File
+    │      ├── 03.jpg       # Image File
+    │      └── ...
+    └── title02.zip         # ITEM_FILE
+```
+
+DESIRED_DIRECTORY Structure
+```
+My Source/                   # SOURCE_DIRECTORY
+    ├── author01/            # AUTHOR_FOLDER
+    │      ├── title01.zip   # ITEM_FILE
+    │      ├── title02.zip   # ITEM_FILE
+    │      ├── title03.zip   # ITEM_FILE
+    │      └── ...
+    └── author02/            # AUTHOR_FOLDER
+```
+* Find all file in SOURCE_DIRECTORY as well as remove empty directory.
+* Create an author folder in SOURCE_DIRECTORY and naming from this order.
+    * Sub folder of SOURCE_DIRECTORY (Where this file inside) (Priority first)
+    * If files are in root of SOURCE_DIRECTORY, then get author from filename itself (Seperate from FILE_FORMAT)
+    * If none, then author is "unknown"
+* Rename file to FILE_FORMAT. 
+* If file is images in folder, then compress to single zip file.
+* If file is archieve, then move to author folder.
 
 ### Formatter
 * Slugnify -> Remove unneccessary words and special character from filename (Please see https://github.com/un33k/python-slugify for more information)
-* Rename filename as format '[author|artist] name.ext' -> Then do following condition for file types
-    * Reduce image size (keep aspect ratio) if width and height > 1024px
+* Rename file to FILE_FORMAT, then do following
+    * Reduce image size (keep aspect ratio) to IMAGE_SIZE
     * Convert .jpg, .png -> .webp image format
     * Convert .avi, .mkv -> .mp4 video format
 
 ### Updater
-Update new file to destined directory. For destined directory format, please refer to reader project https://github.com/Tee55/reader.
+TARGET_DIRECTORY Structure (Directory you want to update)
+```
+My Source/                                 # TARGET_DIRECTORY
+    ├── author01/                          # AUTHOR_FOLDER
+    │      ├── title01.zip                 # ITEM_FILE
+    │      ├── title02.zip                 # ITEM_FILE
+    │      ├── title03/                    # CHAPTER_FOLDER
+    │      │        ├── chapter01.zip      # CHAPTER_ITEM
+    │      │        ├── chapter02.zip      # CHAPTER_ITEM
+    │      │        └── chapter03.zip      # CHAPTER_ITEM
+    │      └── ...      
+    └── author02/                          # AUTHOR_FOLDER
+```
+For more information on TARGET_DIRECTORY Structure, please refer to reader project https://github.com/Tee55/reader.
+
+* Format SOURCE_DIRECTORY using Formatter function.
+* Get author and name from file, by following
+    * Sub folder of SOURCE_DIRECTORY (Where this file inside) (Priority first)
+    * If files are in root of SOURCE_DIRECTORY, then get author from filename itself (Seperate from FILE_FORMAT)
+    * If none, then author is "unknown"
+* Rename file to FILE_FORMAT.
+* If file not exist, move to AUTHOR_FOLDER in TARGET_DIRECTORY.
 
 ### Create stanalone executable
 ```
