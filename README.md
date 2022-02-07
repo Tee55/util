@@ -1,4 +1,4 @@
-# Utility for formatting directory
+# Utility for comic directory
 
 ### Initial Setup
 ```
