@@ -421,6 +421,7 @@ class Formatter:
             else:
                 self.cleanFile(os.path.join(arthur_path, new_fileDir))
         
+        # Check if all chapter complete (Not include special chapter)
         if isChapter:
             for index, chapters_index in enumerate(natsorted(chapters_index_list)):
                 if index+1 != chapters_index:
