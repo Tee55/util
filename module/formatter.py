@@ -428,4 +428,7 @@ class Formatter:
                     missing_chapter.append(index)
                     
             if len(missing_chapter) != 0:
-                tqdm.write("{}: Chapter {} is missing.".format(arthur_path, missing_chapter))
+                missing_text = "{}: Chapter {} is missing.".format(arthur_path, missing_chapter)
+                tqdm.write(missing_text)
+                with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
+                    f.write(missing_text)
