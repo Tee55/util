@@ -1,78 +1,91 @@
 import os
-from tkinter import filedialog
-from tkinter import *
 import shutil
-from progress.bar import Bar
 from module.formatter import Formatter
 import time
 import datetime
+from tqdm import tqdm
+import logging
+from general import temp_dirPath, TqdmLoggingHandler
 
 formatter = Formatter()
 
 class Updater:
 
     def __init__(self):
-        pass
+        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
+        self.logger = logging.getLogger()
+        self.logger.addHandler(TqdmLoggingHandler())
+        self.formatter = Formatter()
 
-    def get_all_files_arthurs(self, srcPath):
-        src_filelist = []
-        src_arthurList = []
-        for root, dirs, files in os.walk(srcPath):
-            for filename in files:
+    def get_all_files_authors(self, fullPath):
+        source_filelist = []
+        source_authorList = []
+        for root, dirs, files in os.walk(fullPath):
+            for file in files:
+                filePath = os.path.join(root, file)
+                filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
-                arthur, new_name = formatter.sep_arthur_name(name)
-                new_filename = "[" + arthur + "] " + new_name + ext
-                if not arthur:
-                    components = root.split(os.sep)
-                    arthur = components[1]
+                
+                # Try to get author name
 
+                # 1st method
+                author, new_name = self.formatter.sep_author_name(name)
+                if author:
+                    author = self.formatter.cleanName(author, isAuthor=True)
+                else:
+                    # 2st method
+                    # Seperate each components from path
+                    components = filePath.split(os.sep)
+                    
+                    # Use second component as author name
+                    author = components[1]
+                    if author:
+                        author = self.formatter.cleanName(author, isAuthor=True)
+                
+                # New filename
+                new_filename = "[" + author + "] " + new_name + ext
+
+                # Rename if filename is not as same as before
                 if filename != new_filename:
                     if not os.path.exists(os.path.join(root, new_filename)):
                         os.rename(os.path.join(root, filename),
                                   os.path.join(root, new_filename))
                     else:
-                        suffix = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                         time.sleep(1)
-                        new_name = "_".join([new_name, suffix])
-                        new_filename = "[" + arthur + "] " + new_name + ext
-                        os.rename(os.path.join(root, filename),
+                        new_name = " ".join([new_name, suffix])
+                        new_filename = "[" + author + "] " + new_name + ext
+                        if not os.path.exists(os.path.join(root, new_filename)):
+                            os.rename(os.path.join(root, filename),
                                   os.path.join(root, new_filename))
+                        else:
+                            logging.error("{}: Problem with renaming file, please check.".format(os.path.join(root, filename)))
+                            continue
 
-                src_filelist.append(os.path.join(root, new_filename))
-                src_arthurList.append(arthur)
+                source_filelist.append(os.path.join(root, new_filename))
+                source_authorList.append(author)
 
-        return src_filelist, src_arthurList
+        return source_filelist, source_authorList
 
-    def run(self):
-        tk = Tk()
-        srcPath = filedialog.askdirectory()
-        print("Select source dir path: {}".format(srcPath))
-            
-        destPath = filedialog.askdirectory()
-        print("Select dir path you want to update: {}".format(destPath))
-        tk.destroy()
-        
-        if os.path.basename(srcPath) not in ["r18", "norm"] or os.path.basename(destPath) not in ["r18", "norm"]:
-            print("Source and Destination folders must be content folder (Please refer to reader project https://github.com/Tee55/reader)")
-            return
+    def run(self, sourcePath, targetPath):
+        # Get all file fullpath and author name from both SOURCE_FOLDER and TARGET_FOLDER
+        source_filelist, source_authorList = self.get_all_files_authors(sourcePath)
+        target_filelist, target_authorList = self.get_all_files_authors(targetPath)
 
-        src_filelist, src_arthurList = self.get_all_files_arthurs(srcPath)
-        dest_filelist, dest_arthurList = self.get_all_files_arthurs(destPath)
+        # Get only name (not include ext)
+        target_namelist = [os.path.splitext(os.path.basename(fullPath))[0] for fullPath in target_filelist]
 
-        dest_namelist = [os.path.splitext(os.path.basename(fullPath))[
-            0] for fullPath in dest_filelist]
-
-        bar = Bar('Processing', max=len(src_filelist))
-        for fullPath, arthur in zip(src_filelist, src_arthurList):
-            if not os.path.exists(os.path.join(destPath, arthur)):
-                os.makedirs(os.path.join(destPath, arthur))
+        for fullPath, author in tqdm(zip(source_filelist, source_authorList), desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             filename = os.path.basename(fullPath)
             name = os.path.splitext(filename)[0]
-            if name not in dest_namelist:
-                movePath = os.path.join(destPath, arthur, filename)
-                if not os.path.exists(movePath):
-                    shutil.move(fullPath, movePath)
+            movePath = os.path.join(targetPath, author, filename)
+            if name not in target_namelist and not os.path.exists(movePath):
+                # Create author folder if not exist
+                if not os.path.exists(os.path.join(targetPath, author)):
+                    os.makedirs(os.path.join(targetPath, author))
+                
+                # Move file
+                shutil.move(fullPath, movePath)
             else:
-                print("You already have: {}".format(filename))
-            bar.next()
-        bar.finish()
+                logging.error("{}: File already exist, please check.".format(fullPath))
+                continue

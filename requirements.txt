@@ -1,4 +1,3 @@
-progress
 Pillow
 python-slugify
 natsort

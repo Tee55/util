@@ -1,78 +1,96 @@
 import os
-from tkinter import filedialog
-from tkinter import *
 import zipfile
 import shutil
-from progress.bar import Bar
+import filetype
 from module.formatter import Formatter
-
-image_ext = ('.jpg', '.png', '.webp')
-zip_ext = ('.zip', '.rar', '.cbz', '.cbr', '.cbx')
-formatter = Formatter()
+import logging
+from tqdm import tqdm
+from general import zip_ext, image_ext, temp_dirPath, TqdmLoggingHandler
 
 class Compressor:
 
     def __init__(self):
-        pass
+        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
+        self.logger = logging.getLogger()
+        self.logger.addHandler(TqdmLoggingHandler())
+        self.formatter = Formatter()
     
-    def run(self):
-
-        tk = Tk()
-        srcPath = filedialog.askdirectory()
-        print("Select source dir path: {}".format(srcPath))
-        tk.destroy()
-
-        filelist = []
-        for root, dirs, files in os.walk(srcPath):
-            for file in files:
-                filelist.append(os.path.join(root, file))
-
-        bar = Bar('Processing', max=len(filelist))
-        for fullPath in filelist:
-            components = fullPath.split(os.sep)
-            arthur = components[1]
-            filename = os.path.basename(fullPath)
-            dirPath = os.path.dirname(fullPath)
-            name, ext = os.path.splitext(filename)
-            
-            if arthur == os.path.basename(srcPath):
-                arthur, new_name = formatter.sep_arthur_name(name)
-                if not arthur:
-                    arthur = "unknown"
-            
-            # Create author folder
-            if arthur not in os.listdir(srcPath):
-                os.mkdir(os.path.join(srcPath, arthur))
-
-            if ext.lower().endswith(image_ext):
-                # Images
-                dirPath = os.path.dirname(fullPath)
-                zipPath = os.path.join(srcPath, arthur, name + ".zip")
-                zipobj = zipfile.ZipFile(zipPath, "w")
-
-                for image_file in os.listdir(dirPath):
-                    if image_file.lower().endswith(image_ext):
-                        zipobj.write(os.path.join(
-                            dirPath, image_file), arcname=image_file)
-                        os.remove(os.path.join(dirPath, image_file))
-                zipobj.close()
-
-                if len(os.listdir(dirPath)) == 0:
-                    os.rmdir(dirPath)
-            elif ext.lower().endswith(zip_ext):
-                # zip, rar, cbz, cbx, cbr
-                movePath = os.path.join(srcPath, arthur, new_name + ext)
-                if not os.path.exists(movePath):
-                    print("Move zipfile from {} to {}".format(fullPath, movePath))
-                    shutil.move(fullPath, movePath)
-                else:
-                    print("File already exist (move from {} to {})".format(fullPath, movePath))
-            else:
-                print("{} filetype not support".format(fullPath))
-            bar.next()
+    def run(self, srcPath):
         
-        # Remove empty dir
         for root, dirs, files in os.walk(srcPath):
-            for dir in dirs:
-                if len(os.listdir(os.path.join(root, dir))) == 0:
-                    os.rmdir(os.path.join(root, dir))
+            
+            # Loop all files in SOURCE_FOLDER
+            for file in tqdm(files, desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+                filePath = os.path.join(root, file)
+                filename = os.path.basename(filePath)
+                dirPath = os.path.dirname(filePath)
+                name, ext = os.path.splitext(filename)
+                
+                # Try to get author name
+
+                # 1st method
+                author, new_name = self.formatter.sep_author_name(name)
+                if author:
+                    author = self.formatter.cleanName(author, isAuthor=True)
+                else:
+                    # 2st method
+                    # Seperate each components from path
+                    components = filePath.split(os.sep)
+                    
+                    # Use second component as author name
+                    author = components[1]
+                    if author:
+                        author = self.formatter.cleanName(author, isAuthor=True)
+                
+                # If none, author is "unknown"
+                if not author:
+                    author = "unknown"
+                
+                # Create author folder
+                if author not in os.listdir(srcPath):
+                    os.mkdir(os.path.join(srcPath, author))
+
+                if filename.lower().endswith(image_ext):
+                    
+                    # Get images parent folder
+                    dirPath = os.path.dirname(filePath)
+                    
+                    # Compress images to zip
+                    zipPath = os.path.join(srcPath, author, name + ".zip")
+                    zipobj = zipfile.ZipFile(zipPath, "w")
+                    for image_file in os.listdir(dirPath):
+                        if image_file.lower().endswith(image_ext):
+                            
+                            # Write image in zip
+                            zipobj.write(os.path.join(
+                                dirPath, image_file), arcname=image_file)
+                            
+                            # Remove image file in folder
+                            if os.path.exists(os.path.join(dirPath, image_file)):
+                                os.remove(os.path.join(dirPath, image_file))
+                    zipobj.close()
+
+                    # Remove image parent folder
+                    if len(os.listdir(dirPath)) == 0:
+                        os.rmdir(dirPath)
+                        
+                elif filename.lower().endswith(zip_ext):
+                    dirPath = os.path.dirname(filePath)
+                    movePath = os.path.join(srcPath, author, new_name + ext)
+                    if not os.path.exists(movePath):
+                        shutil.move(filePath, movePath)
+                        
+                        # Remove item parent folder if empty
+                        if len(os.listdir(dirPath)) == 0:
+                            os.rmdir(dirPath)
+                    else:
+                        logging.error("{}: File already exist, please check.".format(filePath))
+                        continue
+                else:
+                    kind = filetype.guess(filePath)
+                    if kind is None:
+                        logging.error("{}: File format unknown.".format(filePath))
+                        return
+                    else:
+                        logging.error("{}: We do not support {}.".format(filePath, kind.mime))
+                        return

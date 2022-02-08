@@ -11,6 +11,7 @@ import io
 import math
 import ffmpeg
 import filetype
+import logging
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES=True
@@ -20,11 +21,7 @@ from tqdm import tqdm
 import shutil
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
-zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
-image_ext = ('.jpg', '.png', '.webp', '.jpeg')
-video_ext = ('.mp4', '.avi', '.mkv')
-image_size = (1024, 1024)
-temp_dirPath = "./temp/"
+from general import image_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
 
 class Formatter:
     
@@ -32,7 +29,11 @@ class Formatter:
         if os.path.exists(os.path.join(temp_dirPath, "missing.txt")):
             with open(os.path.join(temp_dirPath, "missing.txt"), "r+") as f:
                 f.truncate(0)
-
+                
+        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
+        self.logger = logging.getLogger()
+        self.logger.addHandler(TqdmLoggingHandler())
+                
     def cleanName(self, name, isAuthor=False):
         
         # Remove head and tail whitespaces
@@ -70,55 +71,59 @@ class Formatter:
         
         return name_output
 
-    def clean(self, srcPath):
+    def clean(self, contentPath):
 
-        for arthur in tqdm(os.listdir(srcPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
-            if len(os.listdir(os.path.join(srcPath, arthur))) == 0:
-                
-                # Remove empty folder
-                if os.path.exists(os.path.join(srcPath, arthur)):
-                    os.rmdir(os.path.join(srcPath, arthur))
-            else:
-                # Get cleaned author name
-                new_arthur = self.cleanName(arthur, isAuthor=True)
-
-                # Renaming arthur name
-                if arthur != new_arthur:
+        for author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+            if os.path.isdir(os.path.join(contentPath, author)) :
+                if len(os.listdir(os.path.join(contentPath, author))) == 0:
                     
-                    if not os.path.exists(os.path.join(srcPath, new_arthur)):
-                        os.rename(os.path.join(srcPath, arthur),
-                                  os.path.join(srcPath, new_arthur))
-                    else:
-                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                        time.sleep(1)
-                        new_arthur = " ".join([new_arthur, suffix])
-                        if not os.path.exists(os.path.join(srcPath, new_arthur)):
-                            os.rename(os.path.join(srcPath, arthur),
-                                    os.path.join(srcPath, new_arthur))
-                        else:
-                            tqdm.write("{}: Problem with renaming file, please check.".format(os.path.join(srcPath, arthur)))
-                            pass
+                    # Remove empty folder
+                    if os.path.exists(os.path.join(contentPath, author)):
+                        os.rmdir(os.path.join(contentPath, author))
+                else:
+                    # Get cleaned author name
+                    new_author = self.cleanName(author, isAuthor=True)
+
+                    # Renaming author name
+                    if author != new_author:
                         
-                # Renaming arthur items
-                self.cleanRecur(new_arthur, os.path.join(srcPath, new_arthur))
+                        if not os.path.exists(os.path.join(contentPath, new_author)):
+                            os.rename(os.path.join(contentPath, author),
+                                    os.path.join(contentPath, new_author))
+                        else:
+                            suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+                            time.sleep(1)
+                            new_author = " ".join([new_author, suffix])
+                            if not os.path.exists(os.path.join(contentPath, new_author)):
+                                os.rename(os.path.join(contentPath, author),
+                                        os.path.join(contentPath, new_author))
+                            else:
+                                logging.error("{}: Problem with renaming file, please check.".format(os.path.join(contentPath, author)))
+                                continue
+                            
+                    # Renaming author items
+                    self.cleanRecur(new_author, os.path.join(contentPath, new_author))
+            else:
+                logging.error("{}: This is not AUTHOR_FOLDER.".format(os.path.join(contentPath, author)))
+                continue
         
-    def sep_arthur_name(self, name):
+    def sep_author_name(self, name):
         
         # Get text inside []
-        arthur = name[name.find("[")+1:name.find("]")]
+        author = name[name.find("[")+1:name.find("]")]
         
         # Get text inside ()
-        arthur = arthur[arthur.find("(")+1:arthur.find(")")]
+        author = author[author.find("(")+1:author.find(")")]
         
         # Text after ] is item name
         item_name = name[name.find("]")+1:]
-        if arthur != "" and item_name != "":
+        if author != "" and item_name != "":
             # Get cleaned author name
-            arthur_output = self.cleanName(arthur, isAuthor=True)
+            author_output = self.cleanName(author, isAuthor=True)
             
             # Get cleaned item name
             item_name = self.cleanName(item_name)
-            return arthur_output, item_name
+            return author_output, item_name
         else:
             # Get cleaned item name
             name_output = self.cleanName(name)
@@ -129,19 +134,19 @@ class Formatter:
             try:
                 zipObj = zipfile.ZipFile(filePath, 'r')
             except Exception as e:
-                tqdm.write("{}: {}".format(filePath, e))
+                logging.error("{}: {}".format(filePath, e))
                 return
         elif rarfile.is_rarfile(filePath):
             try:
                 zipObj = rarfile.RarFile(filePath, 'r')
             except Exception as e:
-                tqdm.write("{}: {}".format(filePath, e))
+                logging.error("{}: {}".format(filePath, e))
                 return
         elif tarfile.is_tarfile(filePath):
             try:
                 zipObj = tarfile.TarFile(filePath, 'r')
             except Exception as e:
-                tqdm.write("{}: {}".format(filePath, e))
+                logging.error("{}: {}".format(filePath, e))
                 return
         elif filePath.lower().endswith(image_ext):
             image_pil = Image.open(filePath)
@@ -161,7 +166,7 @@ class Formatter:
                         os.remove(filePath)
                     return
                 else:
-                    tqdm.write("{}: There is already .webp file, please check.".format(filePath))
+                    logging.error("{}: There is already .webp file, please check.".format(filePath))
                     return
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
                 image_pil.thumbnail(image_size)
@@ -219,10 +224,11 @@ class Formatter:
         else:
             kind = filetype.guess(filePath)
             if kind is None:
-                tqdm.write("{}: File format unknown.".format(filePath))
+                logging.error("{}: File format unknown.".format(filePath))
                 return
             else:
-                tqdm.write("{}: We do not support {}.".format(filePath, kind.mime))
+                logging.error("{}: We do not support {}.".format(filePath, kind.mime))
+                return
         
         zip_filename = os.path.basename(filePath)
         dirPath = os.path.dirname(filePath)
@@ -235,7 +241,7 @@ class Formatter:
         
         for fileDirPath in natsorted(zipObj.namelist()):
             if os.path.isdir(fileDirPath):
-                pass
+                continue
             elif fileDirPath.lower().endswith(image_ext):
                 
                 # Check first image if it need to write (Save time)
@@ -245,7 +251,7 @@ class Formatter:
                     imageList.append(image_pil)
                     w, h = image_pil.size
                 except Exception as e:
-                    tqdm.write("{}: {}".format(filePath, e))
+                    logging.error("{}: {}".format(filePath, e))
                     zipObj.close()
                     new_zipObj.close()
                     if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
@@ -319,7 +325,7 @@ class Formatter:
                     crop_image.save(image_byte, "webp", quality=100)
                     new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
         elif isWrite and len(imageList) == 0:
-            tqdm.write("{}: Can not find image file in archieve.".format(filePath))
+            logging.error("{}: Can not find image file in archieve.".format(filePath))
             return
             
         zipObj.close()
@@ -337,7 +343,7 @@ class Formatter:
                     # Move file from temp folder
                     shutil.move(os.path.join(temp_dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
                 else:
-                    tqdm.write("{}: File already exist".format(os.path.join(dirPath, zip_filename)))
+                    logging.error("{}: File already exist".format(os.path.join(dirPath, zip_filename)))
                     return
         else:
             # Remove temp file
@@ -345,15 +351,15 @@ class Formatter:
                 os.remove(os.path.join(temp_dirPath, "temp.zip"))
 
 
-    def cleanRecur(self, arthur, arthur_path, isChapter=False):
+    def cleanRecur(self, author, author_path, isChapter=False):
         
         if isChapter:
             # Progress description
             desc = "Chapter Folder Progress"
             
             # Only one image in Chapter Folder mean it is thumbnail
-            imageList = [chapFile for chapFile in os.listdir(arthur_path) if chapFile.lower().endswith(image_ext)]
-            if len(os.listdir(arthur_path)) >= 1 and len(imageList) == 1:
+            imageList = [chapFile for chapFile in os.listdir(author_path) if chapFile.lower().endswith(image_ext)]
+            if len(os.listdir(author_path)) >= 1 and len(imageList) == 1:
                 isThumbnail = True
             else:
                 isThumbnail = False
@@ -362,68 +368,68 @@ class Formatter:
             desc = "Author Folder Progress"
         
         chapters_index_list = []
-        for fileDir in tqdm(os.listdir(arthur_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
-            if os.path.isdir(os.path.join(arthur_path, fileDir)):
+        for fileDir in tqdm(os.listdir(author_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+            if os.path.isdir(os.path.join(author_path, fileDir)):
                 name = fileDir 
             else:
                 name = os.path.splitext(fileDir)[0]
                 
-            # Sep filename and arthur from format '[author|artist] filename.ext'
-            _, new_name = self.sep_arthur_name(name)
+            # Sep filename and author from format '[author|artist] filename.ext'
+            _, new_name = self.sep_author_name(name)
             if isChapter:
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
                     
                     # Thumbnail in chapter folder
-                    new_name = "[" + arthur + "] " + "thumbnail"
+                    new_name = "[" + author + "] " + "thumbnail"
                 elif re.search(r'\d+[a-z]?$', new_name):
                     match_list = re.findall(r'\d+$', new_name)
                     if len(match_list) >= 1:
                         # Not include special chapter like 2a, 3b, 4c
                         chapters_index_list.append(int(match_list[0]))
                 else:
-                    tqdm.write("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(arthur_path, fileDir)))
-                    pass
+                    logging.error("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(author_path, fileDir)))
+                    continue
                 
-            # add arthur name to the front
-            new_name = "[" + arthur + "] " + new_name
+            # add author name to the front
+            new_name = "[" + author + "] " + new_name
                 
             if name != new_name:
-                if os.path.isfile(os.path.join(arthur_path, fileDir)):
+                if os.path.isfile(os.path.join(author_path, fileDir)):
                     name, ext = os.path.splitext(fileDir)
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
                 
                 # Rename fileDir
-                if not os.path.exists(os.path.join(arthur_path, new_fileDir)):
-                    os.rename(os.path.join(arthur_path, fileDir),
-                                    os.path.join(arthur_path, new_fileDir))
+                if not os.path.exists(os.path.join(author_path, new_fileDir)):
+                    os.rename(os.path.join(author_path, fileDir),
+                                    os.path.join(author_path, new_fileDir))
                 else:
                     suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                     time.sleep(1)
                     new_name = " ".join([new_name, suffix])
-                    if os.path.isfile(os.path.join(arthur_path, fileDir)):
+                    if os.path.isfile(os.path.join(author_path, fileDir)):
                         name, ext = os.path.splitext(fileDir)
                         new_fileDir = new_name + ext
                     else:
                         new_fileDir = new_name
-                    if not os.path.exists(os.path.join(arthur_path, new_fileDir)):
-                        os.rename(os.path.join(arthur_path, fileDir),
-                                os.path.join(arthur_path, new_fileDir))
+                    if not os.path.exists(os.path.join(author_path, new_fileDir)):
+                        os.rename(os.path.join(author_path, fileDir),
+                                os.path.join(author_path, new_fileDir))
                     else:
-                        tqdm.write("{}: Problem with renaming file, please check.".format(os.path.join(arthur_path, fileDir)))
-                        pass
+                        logging.error("{}: Problem with renaming file, please check.".format(os.path.join(author_path, fileDir)))
+                        continue
             else:
                 new_fileDir = fileDir
                         
-            if os.path.isdir(os.path.join(arthur_path, new_fileDir)):
-                if len(os.listdir(os.path.join(arthur_path, new_fileDir))) == 0:
+            if os.path.isdir(os.path.join(author_path, new_fileDir)):
+                if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
                     # Remove empty folder
-                    os.rmdir(os.path.join(arthur_path, new_fileDir))
+                    os.rmdir(os.path.join(author_path, new_fileDir))
                 else:
-                    self.cleanRecur(arthur, os.path.join(arthur_path, new_fileDir), isChapter=True)
+                    self.cleanRecur(author, os.path.join(author_path, new_fileDir), isChapter=True)
             else:
-                self.cleanFile(os.path.join(arthur_path, new_fileDir))
+                self.cleanFile(os.path.join(author_path, new_fileDir))
         
         # Check if all chapter complete (Not include special chapter)
         if isChapter:
@@ -433,8 +439,8 @@ class Formatter:
                     missing_chapter.append(index)
                     
             if len(missing_chapter) != 0:
-                missing_text = "{}: Chapter {} is missing.".format(arthur_path, missing_chapter)
-                tqdm.write(missing_text)
+                missing_text = "{}: Chapter {} is missing.".format(author_path, missing_chapter)
+                logging.error(missing_text)
                 with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
                     f.write(missing_text)
                     f.write("\n")
