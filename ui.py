@@ -7,21 +7,33 @@ class CompressorPage(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
         label = tk.Label(self, text="Compressor")
+        label.pack()
+        button = ttk.Button(self, text="Select source directory", command=self.opendir)
+        button.pack()
+    
+    def opendir(self):
+        sourcePath = filedialog.askdirectory()
+        sourcePath_label = tk.Label(self, text=sourcePath)
+        sourcePath_label.pack()
         
 class FormatterPage(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
         label = tk.Label(self, text="Formatter")
+        label.pack()
         button = ttk.Button(self, text="Select source directory", command=self.opendir)
+        button.pack()
         
     def opendir(self):
         sourcePath = filedialog.askdirectory()
         sourcePath_label = tk.Label(self, text=sourcePath)
+        sourcePath_label.pack()
         
 class UpdaterPage(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
         label = tk.Label(self, text="Formatter")
+        label.pack()
         
 class MainPage(tk.Tk):
     def __init__(self, *args, **kwargs):
