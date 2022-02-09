@@ -9,7 +9,7 @@ import rarfile
 import tarfile
 import io
 import math
-import ffmpeg
+import subprocess
 import filetype
 import logging
 
@@ -208,10 +208,11 @@ class Formatter:
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                stream = ffmpeg.input(filePath)
-                stream = ffmpeg.output(stream, os.path.join(dirPath, name + ".mp4"))
-                ffmpeg.run(stream)
-                
+                try:
+                    subprocess.call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', filePath, os.path.join(dirPath, name + ".mp4")])  
+                except Exception as e:
+                    logging.error("{}: {}".format(filePath, e))
+                    return
                 # Remove old file
                 if os.path.exists(filePath):
                     os.remove(filePath)
