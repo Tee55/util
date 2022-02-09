@@ -214,7 +214,7 @@ class Formatter:
                                      '-i', filePath,
                                      '-map', '0:v:0',
                                      '-map', '0:a:1',
-                                     '-map', '0:s:2',
+                                     '-map', '0:s:2?',
                                      '-c:v', 'libx264',
                                      '-c:a ', 'aac',
                                      '-c:s', 'mov_text',
@@ -400,10 +400,10 @@ class Formatter:
                 else:
                     logging.error("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(author_path, fileDir)))
                     continue
+            else:
+                # add author name to the front
+                new_name = "[" + author + "] " + new_name
                 
-            # add author name to the front
-            new_name = "[" + author + "] " + new_name
-            
             if os.path.isfile(os.path.join(author_path, fileDir)):
                 name, ext = os.path.splitext(fileDir)
                 new_fileDir = new_name + ext
