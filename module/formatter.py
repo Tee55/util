@@ -209,7 +209,18 @@ class Formatter:
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
                 try:
-                    subprocess.call(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', filePath, os.path.join(dirPath, name + ".mp4")])  
+                    subprocess.call(['ffmpeg', 
+                                     '-i', filePath,
+                                     '-map', '0:v:0',
+                                     '-map', '-map 0:a:1',
+                                     '-map', '0:s:2',
+                                     '-c:v', 'libx264',
+                                     '-c:a ', 'aac',
+                                     '-c:s', 'mov_text',
+                                     '-metadata:s:s:0', 'language=eng',
+                                     '-hide_banner', 
+                                     '-loglevel', 'error',
+                                     os.path.join(dirPath, name + ".mp4")])  
                 except Exception as e:
                     logging.error("{}: {}".format(filePath, e))
                     return
