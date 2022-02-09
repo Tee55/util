@@ -221,12 +221,12 @@ class Formatter:
                                      '-metadata:s:s:0', 'language=eng',
                                      '-hide_banner', 
                                      '-loglevel', 'error',
-                                     os.path.join(dirPath, name + ".mp4")])  
+                                     os.path.join(dirPath, name + ".mp4")])
                 except Exception as e:
                     logging.error("{}: {}".format(filePath, e))
                     return
                 # Remove old file
-                if os.path.exists(filePath):
+                if os.path.exists(filePath) and os.path.exists(os.path.join(dirPath, name + ".mp4")):
                     os.remove(filePath)
                 return
             elif filePath.lower().endswith('.mp4'):
