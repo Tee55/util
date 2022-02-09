@@ -392,14 +392,16 @@ class Formatter:
                     
                     # Thumbnail in chapter folder
                     new_name = "[" + author + "] " + "thumbnail"
-                elif re.search(r'\d+[a-z]?$', new_name):
-                    match_list = re.findall(r'\d+$', new_name)
-                    if len(match_list) >= 1:
-                        # Not include special chapter like 2a, 3b, 4c
-                        chapters_index_list.append(int(match_list[0]))
                 else:
-                    logging.error("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(author_path, fileDir)))
-                    continue
+                    new_name = "[" + author + "] " + new_name
+                    if re.search(r'\d+[a-z]?$', new_name):
+                        match_list = re.findall(r'\d+$', new_name)
+                        if len(match_list) >= 1:
+                            # Not include special chapter like 2a, 3b, 4c
+                            chapters_index_list.append(int(match_list[0]))
+                    else:
+                        logging.error("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(author_path, fileDir)))
+                        continue
             else:
                 # add author name to the front
                 new_name = "[" + author + "] " + new_name
