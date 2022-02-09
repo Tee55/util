@@ -1,64 +1,194 @@
-import tkinter as tk
-from tkinter import OptionMenu, StringVar
-from tkinter import ttk
-from tkinter import filedialog
+from ast import For
+import sys
+from PyQt5.QtWidgets import *
+import os
+from module.compressor import Compressor
+from module.formatter import Formatter
+from module.updater import Updater
     
-class CompressorPage(tk.Frame):
-    def __init__(self, *args, **kwargs):
-        tk.Frame.__init__(self, *args, **kwargs)
-        label = tk.Label(self, text="Compressor")
-        label.pack()
-        button = ttk.Button(self, text="Select source directory", command=self.opendir)
-        button.pack()
-    
-    def opendir(self):
-        sourcePath = filedialog.askdirectory()
-        sourcePath_label = tk.Label(self, text=sourcePath)
-        sourcePath_label.pack()
+class CompressorPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
         
-class FormatterPage(tk.Frame):
-    def __init__(self, *args, **kwargs):
-        tk.Frame.__init__(self, *args, **kwargs)
-        label = tk.Label(self, text="Formatter")
-        label.pack()
-        button = ttk.Button(self, text="Select source directory", command=self.opendir)
-        button.pack()
+        self.textbox_sourcePath = QLineEdit(self)
+        self.textbox_sourcePath.setReadOnly(True)
         
-    def opendir(self):
-        sourcePath = filedialog.askdirectory()
-        sourcePath_label = tk.Label(self, text=sourcePath)
-        sourcePath_label.pack()
+        self.btn_sourcePath = QPushButton("Select Source Folder")
+        self.btn_sourcePath.clicked.connect(self.openSourcePath)
         
-class UpdaterPage(tk.Frame):
-    def __init__(self, *args, **kwargs):
-        tk.Frame.__init__(self, *args, **kwargs)
-        label = tk.Label(self, text="Formatter")
-        label.pack()
+        self.btn_getstart = QPushButton("Get Start")
+        self.btn_getstart.clicked.connect(self.get_start)
         
-class MainPage(tk.Tk):
-    def __init__(self, *args, **kwargs):
-        tk.Tk.__init__(self, *args, **kwargs)
+        layout.addWidget(self.textbox_sourcePath)
+        layout.addWidget(self.btn_sourcePath)
+        layout.addWidget(self.btn_getstart)
         
-        options = ["compressor", "formatter", "updater"]
-        self.variable = StringVar(self)
-        self.variable.set(options[0])
-        self.variable.trace("w", self.callback)
-
-        w = OptionMenu(self, self.variable, *options)
-        w.pack()
+        self.error_dialog = QErrorMessage()
         
-    def callback(self, *args):
-        select_module = self.variable.get()
-        if select_module == "compressor":
-            compressorPage = CompressorPage()
-            compressorPage.pack()
-        elif select_module == "formatter":
-            formatterPage = FormatterPage()
-            formatterPage.pack()
+    def get_start(self):
+        compressor = Compressor()
+        if os.path.basename(self.sourcePath) in ["r18", "norm"]:
+            compressor.run(self.sourcePath)
         else:
-            updaterPage = UpdaterPage()
-            updaterPage.pack()
+            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(self.sourcePath))
+        
+    def openSourcePath(self):
+        self.sourcePath = QFileDialog.getExistingDirectory(self, "Select Directory")
+        
+        if self.sourcePath:
+            self.textbox_sourcePath.setText(self.sourcePath)
+        else:    
+            self.error_dialog.showMessage('No directory select.')
+        
+class FormatterPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        
+        self.combobox = QComboBox()
+        self.combobox.addItems(["content", "author", "category", "collection"])
+        
+        self.textbox_sourcePath = QLineEdit(self)
+        self.textbox_sourcePath.setReadOnly(True)
+        
+        self.btn_sourcePath = QPushButton("Select Source Folder")
+        self.btn_sourcePath.clicked.connect(self.openSourcePath)
+        
+        self.btn_getstart = QPushButton("Get Start")
+        self.btn_getstart.clicked.connect(self.get_start)
+        
+        layout.addWidget(self.combobox)
+        layout.addWidget(self.textbox_sourcePath)
+        layout.addWidget(self.btn_sourcePath)
+        layout.addWidget(self.btn_getstart)
+        
+        self.error_dialog = QErrorMessage()
+         
+    def get_start(self):
+        formatter = Formatter()
+        if self.combobox.currentText() == "content":
+            if os.path.basename(self.sourcePath) in ["r18", "norm"]:
+                formatter.clean(self.sourcePath)
+            else:
+                print("{}: This is not content folder.".format(self.sourcePath))
+        elif self.combobox.currentText() == "author":
+            if os.path.basename(self.sourcePath) not in ["r18", "norm"]:
+                author = os.path.basename(self.sourcePath)
+                formatter.cleanRecur(author, self.sourcePath, isChapter=False)
+        elif self.combobox.currentText() == "category":
+            for content_folder in os.listdir(self.sourcePath):
+                if content_folder in ["r18", "norm"]:
+                    formatter.clean(os.path.join(self.sourcePath, content_folder))
+        elif self.combobox.currentText() == "collection":
+            for category_folder in os.listdir(self.sourcePath):
+                if os.path.isdir(os.path.join(self.sourcePath, category_folder)):
+                    for content_folder in os.listdir(os.path.join(self.sourcePath, category_folder)):
+                        if content_folder in ["r18", "norm"]:
+                            formatter.clean(os.path.join(self.sourcePath, category_folder, content_folder))
+        
+    def openSourcePath(self):
+        self.sourcePath = QFileDialog.getExistingDirectory(self, "Select Directory")
+        
+        if self.sourcePath:
+            self.textbox_sourcePath.setText(self.sourcePath)
+        else:    
+            self.error_dialog.showMessage('No directory select.')
             
-root = MainPage()
-root.title("Utility Selection Page")
-root.mainloop()
+        
+class UpdaterPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        
+        self.textbox_sourcePath = QLineEdit(self)
+        self.textbox_sourcePath.setReadOnly(True)
+        
+        self.btn_sourcePath = QPushButton("Select Source Folder")
+        self.btn_sourcePath.clicked.connect(self.openSourcePath)
+        
+        self.textbox_targetPath = QLineEdit(self)
+        self.textbox_sourcePath.setReadOnly(True)
+        
+        self.btn_targetPath = QPushButton("Select Target Folder")
+        self.btn_targetPath.clicked.connect(self.openTargetPath)
+        
+        self.btn_getstart = QPushButton("Get Start")
+        self.btn_getstart.clicked.connect(self.get_start)
+        
+        layout.addWidget(self.textbox_sourcePath)
+        layout.addWidget(self.btn_sourcePath)
+        
+        layout.addWidget(self.textbox_targetPath)
+        layout.addWidget(self.btn_targetPath)
+        
+        layout.addWidget(self.btn_getstart)
+        
+        self.error_dialog = QErrorMessage()
+        
+    def get_start(self):
+        updater = Updater()
+        if os.path.basename(self.sourcePath) in ["r18", "norm"]:
+            if os.path.basename(self.targetPath) in ["r18", "norm"]:
+                updater = Updater()
+                updater.run(self.sourcePath, self.targetPath)
+            else:
+                print("{}: TARGET_FOLDER is not CONTENT_FOLDER".format(self.sourcePath))
+        else:
+            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(self.sourcePath))
+        
+    def openSourcePath(self):
+        self.sourcePath = QFileDialog.getExistingDirectory(self, "Select Directory")
+        
+        if self.sourcePath:
+            self.textbox_sourcePath.setText(self.sourcePath)
+        else:    
+            self.error_dialog.showMessage('No directory select.')
+            
+    def openTargetPath(self):
+        self.targetPath = QFileDialog.getExistingDirectory(self, "Select Directory")
+        
+        if self.targetPath:
+            self.textbox_targetPath.setText(self.targetPath)
+        else:    
+            self.error_dialog.showMessage('No directory select.')
+        
+class MainWindow(QWidget):
+    
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Utility")
+        self.initUI()
+    
+    def initUI(self):
+        self.leftlist = QListWidget()
+        self.leftlist.insertItem (0, 'Compressor' )
+        self.leftlist.insertItem (1, 'Formatter' )
+        self.leftlist.insertItem (2, 'Updater' )
+        self.leftlist.currentRowChanged.connect(self.display)
+        
+        
+        self.stack = QStackedWidget(self)
+        compressorPage = CompressorPage()
+        formatterPage = FormatterPage()
+        updaterPage = UpdaterPage()
+        self.stack.addWidget(compressorPage)
+        self.stack.addWidget(formatterPage)
+        self.stack.addWidget(updaterPage)
+        
+        mainPageLayout = QHBoxLayout(self)
+        mainPageLayout.addWidget(self.leftlist)
+        mainPageLayout.addWidget(self.stack)
+        
+        self.setLayout(mainPageLayout)
+        self.show()
+        
+    def display(self, i):
+        self.stack.setCurrentIndex(i)
+            
+            
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    mainWindow = MainWindow()
+    mainWindow.show()
+    sys.exit(app.exec_())

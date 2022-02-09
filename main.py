@@ -23,7 +23,22 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     
-    if args.module == "formatter":
+    
+    if args.module == "compressor":
+        
+        root = tk.Tk()
+        root.call('tk', 'scaling', 4.0)
+        sourcePath = filedialog.askdirectory()
+        print("Select source dir path: {}".format(sourcePath))
+        root.destroy()
+        
+        if os.path.basename(sourcePath) in ["r18", "norm"]:
+            compressor = Compressor()
+            compressor.run(sourcePath)
+        else:
+            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(sourcePath))
+            
+    elif args.module == "formatter":
         
         root = tk.Tk()
         root.call('tk', 'scaling', 4.0)
@@ -52,19 +67,6 @@ if __name__ == '__main__':
                     for content_folder in os.listdir(os.path.join(sourcePath, category_folder)):
                         if content_folder in ["r18", "norm"]:
                             formatter.clean(os.path.join(sourcePath, category_folder, content_folder))
-    elif args.module == "compressor":
-        
-        root = tk.Tk()
-        root.call('tk', 'scaling', 4.0)
-        sourcePath = filedialog.askdirectory()
-        print("Select source dir path: {}".format(sourcePath))
-        root.destroy()
-        
-        if os.path.basename(sourcePath) in ["r18", "norm"]:
-            compressor = Compressor()
-            compressor.run(sourcePath)
-        else:
-            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(sourcePath))
             
     elif args.module == "updater":
         

@@ -5,7 +5,7 @@ import filetype
 from module.formatter import Formatter
 import logging
 from tqdm import tqdm
-from general import zip_ext, image_ext, temp_dirPath, TqdmLoggingHandler
+from module.general import zip_ext, image_ext, temp_dirPath, TqdmLoggingHandler
 
 class Compressor:
 

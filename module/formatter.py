@@ -21,7 +21,7 @@ from tqdm import tqdm
 import shutil
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
-from general import image_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
+from module.general import image_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
 
 class Formatter:
     
@@ -84,22 +84,20 @@ class Formatter:
                     # Get cleaned author name
                     new_author = self.cleanName(author, isAuthor=True)
 
-                    # Renaming author name
-                    if author != new_author:
-                        
+                    # Rename author folder
+                    if not os.path.exists(os.path.join(contentPath, new_author)):
+                        os.rename(os.path.join(contentPath, author),
+                                os.path.join(contentPath, new_author))
+                    elif os.path.exists(os.path.join(contentPath, new_author)) and new_author != author:
+                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+                        time.sleep(1)
+                        new_author = " ".join([new_author, suffix])
                         if not os.path.exists(os.path.join(contentPath, new_author)):
                             os.rename(os.path.join(contentPath, author),
                                     os.path.join(contentPath, new_author))
                         else:
-                            suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                            time.sleep(1)
-                            new_author = " ".join([new_author, suffix])
-                            if not os.path.exists(os.path.join(contentPath, new_author)):
-                                os.rename(os.path.join(contentPath, author),
-                                        os.path.join(contentPath, new_author))
-                            else:
-                                logging.error("{}: Problem with renaming file, please check.".format(os.path.join(contentPath, author)))
-                                continue
+                            logging.error("{}: Problem with renaming file, please check.".format(os.path.join(contentPath, author)))
+                            continue
                             
                     # Renaming author items
                     self.cleanRecur(new_author, os.path.join(contentPath, new_author))
@@ -392,35 +390,32 @@ class Formatter:
                 
             # add author name to the front
             new_name = "[" + author + "] " + new_name
+            
+            if os.path.isfile(os.path.join(author_path, fileDir)):
+                name, ext = os.path.splitext(fileDir)
+                new_fileDir = new_name + ext
+            else:
+                new_fileDir = new_name
                 
-            if name != new_name:
+            # Rename fileDir
+            if not os.path.exists(os.path.join(author_path, new_fileDir)):
+                os.rename(os.path.join(author_path, fileDir),
+                                os.path.join(author_path, new_fileDir))
+            elif os.path.exists(os.path.join(author_path, new_fileDir)) and new_name != name:
+                suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+                time.sleep(1)
+                new_name = " ".join([new_name, suffix])
                 if os.path.isfile(os.path.join(author_path, fileDir)):
                     name, ext = os.path.splitext(fileDir)
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-                
-                # Rename fileDir
                 if not os.path.exists(os.path.join(author_path, new_fileDir)):
                     os.rename(os.path.join(author_path, fileDir),
-                                    os.path.join(author_path, new_fileDir))
+                            os.path.join(author_path, new_fileDir))
                 else:
-                    suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                    time.sleep(1)
-                    new_name = " ".join([new_name, suffix])
-                    if os.path.isfile(os.path.join(author_path, fileDir)):
-                        name, ext = os.path.splitext(fileDir)
-                        new_fileDir = new_name + ext
-                    else:
-                        new_fileDir = new_name
-                    if not os.path.exists(os.path.join(author_path, new_fileDir)):
-                        os.rename(os.path.join(author_path, fileDir),
-                                os.path.join(author_path, new_fileDir))
-                    else:
-                        logging.error("{}: Problem with renaming file, please check.".format(os.path.join(author_path, fileDir)))
-                        continue
-            else:
-                new_fileDir = fileDir
+                    logging.error("{}: Problem with renaming file, please check.".format(os.path.join(author_path, fileDir)))
+                    continue
                         
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:

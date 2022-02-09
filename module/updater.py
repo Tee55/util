@@ -5,7 +5,7 @@ import time
 import datetime
 from tqdm import tqdm
 import logging
-from general import temp_dirPath, TqdmLoggingHandler
+from module.general import temp_dirPath, TqdmLoggingHandler
 
 formatter = Formatter()
 
@@ -45,22 +45,21 @@ class Updater:
                 # New filename
                 new_filename = "[" + author + "] " + new_name + ext
 
-                # Rename if filename is not as same as before
-                if filename != new_filename:
+                # Rename filename
+                if not os.path.exists(os.path.join(root, new_filename)):
+                    os.rename(os.path.join(root, filename),
+                                os.path.join(root, new_filename))
+                elif os.path.exists(os.path.join(root, new_filename)) and new_name != name:
+                    suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+                    time.sleep(1)
+                    new_name = " ".join([new_name, suffix])
+                    new_filename = "[" + author + "] " + new_name + ext
                     if not os.path.exists(os.path.join(root, new_filename)):
                         os.rename(os.path.join(root, filename),
-                                  os.path.join(root, new_filename))
+                                os.path.join(root, new_filename))
                     else:
-                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                        time.sleep(1)
-                        new_name = " ".join([new_name, suffix])
-                        new_filename = "[" + author + "] " + new_name + ext
-                        if not os.path.exists(os.path.join(root, new_filename)):
-                            os.rename(os.path.join(root, filename),
-                                  os.path.join(root, new_filename))
-                        else:
-                            logging.error("{}: Problem with renaming file, please check.".format(os.path.join(root, filename)))
-                            continue
+                        logging.error("{}: Problem with renaming file, please check.".format(os.path.join(root, filename)))
+                        continue
 
                 source_filelist.append(os.path.join(root, new_filename))
                 source_authorList.append(author)
