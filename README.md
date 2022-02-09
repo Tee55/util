@@ -47,7 +47,7 @@ My Source/                   # SOURCE_DIRECTORY
 * Rename file to FILE_FORMAT, then do following
     * Reduce image size (keep aspect ratio) to IMAGE_SIZE
     * Convert .jpg, .png -> .webp image format
-    * Convert .avi, .mkv -> .mp4 video format (*** This function need ffmpeg, you need to install ffmpeg correctly***)
+    * Convert .avi, .mkv -> .mp4 video format ***(This function need ffmpeg, you need to install ffmpeg correctly)***
 
 ### Updater
 TARGET_DIRECTORY Structure (Directory you want to update)
