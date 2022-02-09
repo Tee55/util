@@ -213,7 +213,7 @@ class Formatter:
                     subprocess.call(['ffmpeg', 
                                      '-i', filePath,
                                      '-map', '0:v:0',
-                                     '-map', '-map 0:a:1',
+                                     '-map', '0:a:1',
                                      '-map', '0:s:2',
                                      '-c:v', 'libx264',
                                      '-c:a ', 'aac',
