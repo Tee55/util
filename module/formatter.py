@@ -209,6 +209,7 @@ class Formatter:
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
                 try:
+                    # Softsub
                     subprocess.call(['ffmpeg', 
                                      '-i', filePath,
                                      '-map', '0:v:0',
