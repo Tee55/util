@@ -212,22 +212,19 @@ class Formatter:
                     # Softsub
                     subprocess.call(['ffmpeg', 
                                      '-i', filePath,
-                                     '-map', '0:v:0',
-                                     '-map', '0:a:1',
-                                     '-map', '0:s:2?',
                                      '-c:v', 'libx264',
-                                     '-c:a ', 'aac',
+                                     '-c:a', 'aac',
                                      '-c:s', 'mov_text',
+                                     '-metadata:s:a:0', 'language=jpn',
                                      '-metadata:s:s:0', 'language=eng',
-                                     '-hide_banner', 
-                                     '-loglevel', 'error',
-                                     os.path.join(dirPath, name + ".mp4")])
+                                     os.path.join(temp_dirPath, name + ".mp4")])
                 except Exception as e:
                     logging.error("{}: {}".format(filePath, e))
                     return
                 # Remove old file
-                if os.path.exists(filePath) and os.path.exists(os.path.join(dirPath, name + ".mp4")):
+                if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
                     os.remove(filePath)
+                    shutil.move(os.path.join(temp_dirPath, name + ".mp4"), os.path.join(dirPath, name + ".mp4"))
                 return
             elif filePath.lower().endswith('.mp4'):
                 # Perfect
