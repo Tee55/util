@@ -85,14 +85,14 @@ class Formatter:
                     new_author = self.cleanName(author, isAuthor=True)
 
                     # Rename author folder
-                    if not os.path.exists(os.path.join(contentPath, new_author)):
+                    if new_author not in os.listdir(contentPath):
                         os.rename(os.path.join(contentPath, author),
                                 os.path.join(contentPath, new_author))
-                    elif os.path.exists(os.path.join(contentPath, new_author)) and new_author != author:
+                    elif new_author != author:
                         suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                         time.sleep(1)
                         new_author = " ".join([new_author, suffix])
-                        if not os.path.exists(os.path.join(contentPath, new_author)):
+                        if new_author not in os.listdir(contentPath):
                             os.rename(os.path.join(contentPath, author),
                                     os.path.join(contentPath, new_author))
                         else:
@@ -157,7 +157,7 @@ class Formatter:
                 dirPath = os.path.dirname(filePath)
                 
                 # Check if .webp exist or not
-                if not os.path.exists(os.path.join(dirPath, name + ".webp")):
+                if name + ".webp" not in os.listdir(dirPath):
                     image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
                     # Remove old file
                     if os.path.exists(filePath):
@@ -410,10 +410,10 @@ class Formatter:
                 new_fileDir = new_name
                 
             # Rename fileDir
-            if not os.path.exists(os.path.join(author_path, new_fileDir)):
+            if new_fileDir not in os.listdir(author_path):
                 os.rename(os.path.join(author_path, fileDir),
                                 os.path.join(author_path, new_fileDir))
-            elif os.path.exists(os.path.join(author_path, new_fileDir)) and new_name != name:
+            elif new_name != name:
                 suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                 time.sleep(1)
                 new_name = " ".join([new_name, suffix])
@@ -422,7 +422,7 @@ class Formatter:
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-                if not os.path.exists(os.path.join(author_path, new_fileDir)):
+                if new_fileDir not in os.listdir(author_path):
                     os.rename(os.path.join(author_path, fileDir),
                             os.path.join(author_path, new_fileDir))
                 else:

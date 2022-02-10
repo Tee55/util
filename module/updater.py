@@ -24,6 +24,7 @@ class Updater:
             for file in files:
                 filePath = os.path.join(root, file)
                 filename = os.path.basename(filePath)
+                dirPath = os.path.dirname(filePath)
                 name, ext = os.path.splitext(filename)
                 
                 # Try to get author name
@@ -46,7 +47,7 @@ class Updater:
                 new_filename = "[" + author + "] " + new_name + ext
 
                 # Rename filename
-                if not os.path.exists(os.path.join(root, new_filename)):
+                if new_filename not in os.listdir(dirPath):
                     os.rename(os.path.join(root, filename),
                                 os.path.join(root, new_filename))
                 elif os.path.exists(os.path.join(root, new_filename)) and new_name != name:
@@ -54,7 +55,7 @@ class Updater:
                     time.sleep(1)
                     new_name = " ".join([new_name, suffix])
                     new_filename = "[" + author + "] " + new_name + ext
-                    if not os.path.exists(os.path.join(root, new_filename)):
+                    if new_filename not in os.listdir(dirPath):
                         os.rename(os.path.join(root, filename),
                                 os.path.join(root, new_filename))
                     else:
