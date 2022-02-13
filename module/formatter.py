@@ -212,8 +212,8 @@ class Formatter:
                     # Softsub
                     subprocess.call(['ffmpeg', 
                                      '-i', filePath,
-                                     '-c:v', 'libx264',
-                                     '-c:a', 'aac',
+                                     '-c:v', 'copy',
+                                     '-c:a', 'copy',
                                      '-c:s', 'mov_text',
                                      '-metadata:s:a:0', 'language=jpn',
                                      '-metadata:s:s:0', 'language=eng',
