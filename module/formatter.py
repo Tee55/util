@@ -210,13 +210,15 @@ class Formatter:
                 dirPath = os.path.dirname(filePath)
                 try:
                     # Softsub
+                    # Select jpn audio and eng subtitle only
                     subprocess.call(['ffmpeg', 
                                      '-i', filePath,
+                                     '-map', '0:v',
+                                     '-map', '0:a:m:language:jpn',
+                                     '-map', '0:s:m:language:eng',
                                      '-c:v', 'copy',
                                      '-c:a', 'copy',
                                      '-c:s', 'mov_text',
-                                     '-metadata:s:a:0', 'language=jpn',
-                                     '-metadata:s:s:0', 'language=eng',
                                      os.path.join(temp_dirPath, name + ".mp4")])
                 except Exception as e:
                     logging.error("{}: {}".format(filePath, e))
