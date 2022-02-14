@@ -204,22 +204,58 @@ class Formatter:
                 # Perfect
                 return
         elif filePath.lower().endswith(video_ext):
-            if filePath.lower().endswith(('.avi', '.mkv')):
-                filename = os.path.basename(filePath)
-                name, ext = os.path.splitext(filename)
-                dirPath = os.path.dirname(filePath)
+            filename = os.path.basename(filePath)
+            name, ext = os.path.splitext(filename)
+            dirPath = os.path.dirname(filePath)
+            if filename.lower().endswith(('.avi', '.mkv')):
+                
                 try:
-                    # Softsub
-                    # Select jpn audio and eng subtitle only
-                    subprocess.call(['ffmpeg', 
+                    
+                    # Softsub     
+                    if os.path.exists(os.path.join(dirPath, name + ".srt")):
+                        # If .srt subtitle file exist
+                        subprocess.call(['ffmpeg', 
                                      '-i', filePath,
+                                     '-i', os.path.join(dirPath, name + ".srt"),
                                      '-map', '0:v',
                                      '-map', '0:a:m:language:jpn',
-                                     '-map', '0:s:m:language:eng',
+                                     '-map', '1:s:0',
                                      '-c:v', 'copy',
                                      '-c:a', 'copy',
                                      '-c:s', 'mov_text',
+                                     '-metadata:s:s:0', 'language=eng',
                                      os.path.join(temp_dirPath, name + ".mp4")])
+                        
+                        # remove subtitle file
+                        os.remove(os.path.join(dirPath, name + ".srt"))
+                    elif os.path.exists(os.path.join(dirPath, name + ".ass")):
+                        # If .ass subtitle file exist
+                        subprocess.call(['ffmpeg', 
+                                     '-i', filePath,
+                                     '-i', os.path.join(dirPath, name + ".ass"),
+                                     '-map', '0:v',
+                                     '-map', '0:a:m:language:jpn',
+                                     '-map', '1:s:0',
+                                     '-c:v', 'copy',
+                                     '-c:a', 'copy',
+                                     '-c:s', 'mov_text',
+                                     '-metadata:s:s:0', 'language=eng',
+                                     os.path.join(temp_dirPath, name + ".mp4")])
+                        
+                        # remove subtitle file
+                        os.remove(os.path.join(dirPath, name + ".ass"))
+                    else:
+                        # Select jpn audio and eng subtitle only
+                        subprocess.call(['ffmpeg', 
+                                        '-i', filePath,
+                                        '-map', '0:v',
+                                        '-map', '0:a:m:language:jpn',
+                                        '-map', '0:s:m:language:eng',
+                                        '-c:v', 'copy',
+                                        '-c:a', 'copy',
+                                        '-c:s', 'mov_text',
+                                        '-metadata:s:s:0', 'language=eng',
+                                        os.path.join(temp_dirPath, name + ".mp4")])
                 except Exception as e:
                     logging.error("{}: {}".format(filePath, e))
                     return
@@ -228,8 +264,53 @@ class Formatter:
                     os.remove(filePath)
                     shutil.move(os.path.join(temp_dirPath, name + ".mp4"), os.path.join(dirPath, name + ".mp4"))
                 return
-            elif filePath.lower().endswith('.mp4'):
-                # Perfect
+            elif filename.lower().endswith('.srt') or filename.lower().endswith('.ass'):
+                return
+            elif filename.lower().endswith('.mp4'):
+                
+                try:
+                    # Check subtitle file and Softsub if exist     
+                    if os.path.exists(os.path.join(dirPath, name + ".srt")):
+                        # If .srt subtitle file exist
+                        subprocess.call(['ffmpeg', 
+                                        '-i', filePath,
+                                        '-i', os.path.join(dirPath, name + ".srt"),
+                                        '-map', '0:v',
+                                        '-map', '0:a:0',
+                                        '-map', '1:s:0',
+                                        '-c:v', 'copy',
+                                        '-c:a', 'copy',
+                                        '-c:s', 'mov_text',
+                                        '-metadata:s:s:0', 'language=eng',
+                                        os.path.join(temp_dirPath, name + ".mp4")])
+                        
+                        # remove subtitle file
+                        os.remove(os.path.join(dirPath, name + ".srt"))
+                    elif os.path.exists(os.path.join(dirPath, name + ".ass")):
+                        # If .ass subtitle file exist
+                        subprocess.call(['ffmpeg', 
+                                        '-i', filePath,
+                                        '-i', os.path.join(dirPath, name + ".ass"),
+                                        '-map', '0:v',
+                                        '-map', '0:a:0',
+                                        '-map', '1:s:0',
+                                        '-c:v', 'copy',
+                                        '-c:a', 'copy',
+                                        '-c:s', 'mov_text',
+                                        '-metadata:s:s:0', 'language=eng',
+                                        os.path.join(temp_dirPath, name + ".mp4")])
+                        
+                        # remove subtitle file
+                        os.remove(os.path.join(dirPath, name + ".ass"))
+                except Exception as e:
+                    logging.error("{}: {}".format(filePath, e))
+                    return
+                
+                # Remove old file
+                if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
+                    os.remove(filePath)
+                    shutil.move(os.path.join(temp_dirPath, name + ".mp4"), os.path.join(dirPath, name + ".mp4"))
+                    
                 return
         else:
             kind = filetype.guess(filePath)

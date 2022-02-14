@@ -47,7 +47,7 @@ My Source/                   # SOURCE_DIRECTORY
 * Rename file to FILE_FORMAT, then do following
     * Reduce image size (keep aspect ratio) to IMAGE_SIZE
     * Convert .jpg, .png -> .webp image format
-    * Convert .avi, .mkv -> .mp4 video format with jpn audio and eng subtitle only.
+    * Convert .avi, .mkv -> .mp4 video format with jpn audio and eng subtitle only. (You can provide video subtitle (.srt, .ass) with the same video filename in chapter folder)
         ***(This function need ffmpeg, you need to install ffmpeg correctly)***
         ***(If eng subtitle does not display automatic on start, please check your video player default subtitle language option)***
 
