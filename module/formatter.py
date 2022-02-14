@@ -442,14 +442,18 @@ class Formatter:
         
         # Check if all chapter complete (Not include special chapter)
         if isChapter:
-            missing_chapter = [] 
-            for index in range(1, natsorted(chapters_index_list)[-1]+1):
-                if index not in chapters_index_list:
-                    missing_chapter.append(index)
-                    
-            if len(missing_chapter) != 0:
-                missing_text = "{}: Chapter {} is missing.".format(author_path, missing_chapter)
-                logging.error(missing_text)
-                with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
-                    f.write(missing_text)
-                    f.write("\n")
+            if len(chapters_index_list) != 0:
+                missing_chapter = [] 
+                for index in range(1, natsorted(chapters_index_list)[-1]+1):
+                    if index not in chapters_index_list:
+                        missing_chapter.append(index)
+                        
+                if len(missing_chapter) != 0:
+                    missing_text = "{}: Chapter {} is missing.".format(author_path, missing_chapter)
+                    logging.error(missing_text)
+                    with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
+                        f.write(missing_text)
+                        f.write("\n")
+            else:
+                logging.error("{}: Can not find chapter item".format(author_path))
+                return
