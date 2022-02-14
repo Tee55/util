@@ -1,3 +1,6 @@
+from module.general import image_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
+import shutil
+from tqdm import tqdm
 import os
 import re
 import datetime
@@ -12,71 +15,71 @@ import math
 import subprocess
 import filetype
 import logging
+import enzyme
 
 from PIL import Image, ImageFile, ImageSequence
-ImageFile.LOAD_TRUNCATED_IMAGES=True
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
-from tqdm import tqdm
-import shutil
 rarfile.UNRAR_TOOL = "UnRAR.exe"
 
-from module.general import image_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
 
 class Formatter:
-    
+
     def __init__(self):
         if os.path.exists(os.path.join(temp_dirPath, "missing.txt")):
             with open(os.path.join(temp_dirPath, "missing.txt"), "r+") as f:
                 f.truncate(0)
-                
-        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
+
+        logging.basicConfig(filename=os.path.join(
+            temp_dirPath, "error.log"), filemode="w")
         self.logger = logging.getLogger()
         self.logger.addHandler(TqdmLoggingHandler())
-                
+
     def cleanName(self, name, isAuthor=False):
-        
+
         # Remove head and tail whitespaces
         name = name.strip()
-        
+
         # Slugify
         name_output = slugify(name, separator=" ")
-        
+
         # Append datetime if string after slugnify is empty
         if name_output == "":
             basename = "unknown"
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
             name_output = " ".join([basename, suffix])
-            
-        # Change to all lowercase 
+
+        # Change to all lowercase
         name_output = name_output.lower()
-        
+
         if isAuthor:
             # Hitomi.la website's author sometime end with etc
             if name_output.endswith("etc"):
                 name_output = name_output.replace("etc", "")
-        
+
         # Remove common end words in doujin
-        remove_list = ["chapter", "chapters", "english", "digital", "fakku", "comic", "comics", "decensored", "x3200"]
+        remove_list = ["chapter", "chapters", "english", "digital",
+                       "fakku", "comic", "comics", "decensored", "x3200"]
         for word in remove_list:
             name_output = name_output.replace(word, "")
-            
+
         # Remove datetime if there is datetime in string (Also update datetime)
         if re.search(r'\d{6}\s\d{6}$', name_output):
             name_output = re.sub(r'\d{6}\s\d{6}$', "", name_output)
-        
+
         # Combine multiple whitespaces to one
         name_output = " ".join(name_output.split())
-        
+
         return name_output
 
     def clean(self, contentPath):
 
         for author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
-            if os.path.isdir(os.path.join(contentPath, author)) :
+            if os.path.isdir(os.path.join(contentPath, author)):
                 if len(os.listdir(os.path.join(contentPath, author))) == 0:
-                    
+
                     # Remove empty folder
                     if os.path.exists(os.path.join(contentPath, author)):
                         os.rmdir(os.path.join(contentPath, author))
@@ -87,38 +90,41 @@ class Formatter:
                     # Rename author folder
                     if new_author not in os.listdir(contentPath):
                         os.rename(os.path.join(contentPath, author),
-                                os.path.join(contentPath, new_author))
+                                  os.path.join(contentPath, new_author))
                     elif new_author != author:
                         suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                         time.sleep(1)
                         new_author = " ".join([new_author, suffix])
                         if new_author not in os.listdir(contentPath):
                             os.rename(os.path.join(contentPath, author),
-                                    os.path.join(contentPath, new_author))
+                                      os.path.join(contentPath, new_author))
                         else:
-                            logging.error("{}: Problem with renaming file, please check.".format(os.path.join(contentPath, author)))
+                            logging.error("{}: Problem with renaming file, please check.".format(
+                                os.path.join(contentPath, author)))
                             continue
-                            
+
                     # Renaming author items
-                    self.cleanRecur(new_author, os.path.join(contentPath, new_author))
+                    self.cleanRecur(new_author, os.path.join(
+                        contentPath, new_author))
             else:
-                logging.error("{}: This is not AUTHOR_FOLDER.".format(os.path.join(contentPath, author)))
+                logging.error("{}: This is not AUTHOR_FOLDER.".format(
+                    os.path.join(contentPath, author)))
                 continue
-        
+
     def sep_author_name(self, name):
-        
+
         # Get text inside []
         author = name[name.find("[")+1:name.find("]")]
-        
+
         # Get text inside ()
         author = author[author.find("(")+1:author.find(")")]
-        
+
         # Text after ] is item name
         item_name = name[name.find("]")+1:]
         if author != "" and item_name != "":
             # Get cleaned author name
             author_output = self.cleanName(author, isAuthor=True)
-            
+
             # Get cleaned item name
             item_name = self.cleanName(item_name)
             return author_output, item_name
@@ -126,7 +132,7 @@ class Formatter:
             # Get cleaned item name
             name_output = self.cleanName(name)
             return None, name_output
-        
+
     def cleanFile(self, filePath):
         if zipfile.is_zipfile(filePath):
             try:
@@ -155,25 +161,28 @@ class Formatter:
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                
+
                 # Check if .webp exist or not
                 if name + ".webp" not in os.listdir(dirPath):
-                    image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                    image_pil.save(os.path.join(
+                        dirPath, name + ".webp"), "webp", quality=100)
                     # Remove old file
                     if os.path.exists(filePath):
                         os.remove(filePath)
                     return
                 else:
-                    logging.error("{}: There is already .webp file, please check.".format(filePath))
+                    logging.error(
+                        "{}: There is already .webp file, please check.".format(filePath))
                     return
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
                 image_pil.thumbnail(image_size)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                
+
                 # Override old .webp
-                image_pil.save(os.path.join(dirPath, name + ".webp"), "webp", quality=100)
+                image_pil.save(os.path.join(dirPath, name +
+                               ".webp"), "webp", quality=100)
                 return
             else:
                 # Perfect
@@ -181,160 +190,194 @@ class Formatter:
         elif filePath.lower().endswith(".gif"):
             image_pil = Image.open(filePath)
             frames = ImageSequence.Iterator(image_pil)
-            
+
             # Check size only first frame (Save time)
             w, h = frames[0].size
-    
+
             if w > 1024 and h > 1024:
                 def thumbnails(frames):
                     for frame in frames:
                         thumbnail = frame.copy()
                         thumbnail.thumbnail(image_size)
                         yield thumbnail
-                        
+
                 frames = thumbnails(frames)
                 filename = os.path.basename(filePath)
                 name, ext = os.path.splitext(filename)
                 dirPath = os.path.dirname(filePath)
-                
+
                 # Override old .gif
-                image_pil.save(os.path.join(dirPath, name + ".gif"), save_all=True, append_images=list(frames))
+                image_pil.save(os.path.join(dirPath, name + ".gif"),
+                               save_all=True, append_images=list(frames))
                 return
             else:
                 # Perfect
                 return
-        elif filePath.lower().endswith(video_ext):
+        elif filePath.lower().endswith('.srt') or filePath.lower().endswith('.ass'):
+            # Subtitle File
+            return
+        elif filePath.lower().endswith('.mkv'):
             filename = os.path.basename(filePath)
             name, ext = os.path.splitext(filename)
             dirPath = os.path.dirname(filePath)
-            if filename.lower().endswith(('.avi', '.mkv')):
-                
+            with open(filePath, 'rb') as f:
+                mkv = enzyme.MKV(f)
                 try:
-                    
-                    # Softsub     
+                    # Softsub
+                    # If .srt subtitle file exist
                     if os.path.exists(os.path.join(dirPath, name + ".srt")):
-                        # If .srt subtitle file exist
-                        subprocess.call(['ffmpeg', 
-                                     '-i', filePath,
-                                     '-i', os.path.join(dirPath, name + ".srt"),
-                                     '-map', '0:v',
-                                     '-map', '0:a:m:language:jpn',
-                                     '-map', '1:s:0',
-                                     '-c:v', 'copy',
-                                     '-c:a', 'copy',
-                                     '-c:s', 'mov_text',
-                                     '-metadata:s:s:0', 'language=eng',
-                                     os.path.join(temp_dirPath, name + ".mp4")])
-                        
-                        # remove subtitle file
+                        subprocess.call(['ffmpeg',
+                                        '-i', filePath,
+                                         '-i', os.path.join(dirPath,
+                                                            name + ".srt"),
+                                         '-map', '0:v',
+                                         '-map', '0:a:0',
+                                         '-map', '1:s:0',
+                                         '-c:v', 'copy',
+                                         '-c:a', 'copy',
+                                         '-c:s', 'mov_text',
+                                         '-metadata:s:a:0', 'language=jpn',
+                                         '-metadata:s:s:0', 'language=eng',
+                                         os.path.join(temp_dirPath, name + ".mp4")])
+
+                        # remove srt subtitle file
                         os.remove(os.path.join(dirPath, name + ".srt"))
-                    elif os.path.exists(os.path.join(dirPath, name + ".ass")):
-                        # If .ass subtitle file exist
-                        subprocess.call(['ffmpeg', 
-                                     '-i', filePath,
-                                     '-i', os.path.join(dirPath, name + ".ass"),
-                                     '-map', '0:v',
-                                     '-map', '0:a:m:language:jpn',
-                                     '-map', '1:s:0',
-                                     '-c:v', 'copy',
-                                     '-c:a', 'copy',
-                                     '-c:s', 'mov_text',
-                                     '-metadata:s:s:0', 'language=eng',
-                                     os.path.join(temp_dirPath, name + ".mp4")])
                         
-                        # remove subtitle file
+                    # If .ass subtitle file exist
+                    elif os.path.exists(os.path.join(dirPath, name + ".ass")):
+                        subprocess.call(['ffmpeg',
+                                        '-i', filePath,
+                                         '-i', os.path.join(dirPath,
+                                                            name + ".ass"),
+                                         '-map', '0:v',
+                                         '-map', '0:a:0',
+                                         '-map', '1:s:0',
+                                         '-c:v', 'copy',
+                                         '-c:a', 'copy',
+                                         '-c:s', 'mov_text',
+                                         '-metadata:s:a:0', 'language=jpn',
+                                         '-metadata:s:s:0', 'language=eng',
+                                         os.path.join(temp_dirPath, name + ".mp4")])
+                        
+                        # remove ass subtitle file
                         os.remove(os.path.join(dirPath, name + ".ass"))
+                        
+                    # Select threr are >1 audio track and >2 subtitle track (sub and no sub), then choose jpn audio and eng subtitle only
+                    elif len(mkv.audio_tracks) > 1 and len(mkv.subtitle_tracks) > 2:
+                        subprocess.call(['ffmpeg',
+                                        '-i', filePath,
+                                         '-map', '0:v',
+                                         '-map', '0:a:m:language:jpn',
+                                         '-map', '0:s:m:language:eng',
+                                         '-c:v', 'copy',
+                                         '-c:a', 'copy',
+                                         '-c:s', 'mov_text',
+                                         '-metadata:s:a:0', 'language=jpn',
+                                         '-metadata:s:s:0', 'language=eng',
+                                         os.path.join(temp_dirPath, name + ".mp4")])
+                    # Sometime there is no metadata, then choose first audio and sub track.
                     else:
-                        # Select jpn audio and eng subtitle only
-                        subprocess.call(['ffmpeg', 
+                        subprocess.call(['ffmpeg',
                                         '-i', filePath,
-                                        '-map', '0:v',
-                                        '-map', '0:a:m:language:jpn',
-                                        '-map', '0:s:m:language:eng',
-                                        '-c:v', 'copy',
-                                        '-c:a', 'copy',
-                                        '-c:s', 'mov_text',
-                                        '-metadata:s:s:0', 'language=eng',
-                                        os.path.join(temp_dirPath, name + ".mp4")])
+                                         '-map', '0:v',
+                                         '-map', '0:a:0',
+                                         '-map', '0:s:0',
+                                         '-c:v', 'copy',
+                                         '-c:a', 'copy',
+                                         '-c:s', 'mov_text',
+                                         '-metadata:s:a:0', 'language=jpn',
+                                         '-metadata:s:s:0', 'language=eng',
+                                         os.path.join(temp_dirPath, name + ".mp4")])
+
                 except Exception as e:
                     logging.error("{}: {}".format(filePath, e))
                     return
-                # Remove old file
-                if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
-                    os.remove(filePath)
-                    shutil.move(os.path.join(temp_dirPath, name + ".mp4"), os.path.join(dirPath, name + ".mp4"))
+
+            # Remove old file if convert success
+            if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
+                os.remove(filePath)
+                shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
+                            os.path.join(dirPath, name + ".mp4"))
+            return
+
+        elif filePath.lower().endswith('.mp4'):
+            filename = os.path.basename(filePath)
+            name, ext = os.path.splitext(filename)
+            dirPath = os.path.dirname(filePath)
+            try:
+                # Check subtitle file and Softsub if exist
+                if os.path.exists(os.path.join(dirPath, name + ".srt")):
+                    # If .srt subtitle file exist
+                    subprocess.call(['ffmpeg',
+                                    '-i', filePath,
+                                     '-i', os.path.join(dirPath,
+                                                        name + ".srt"),
+                                     '-map', '0:v',
+                                     '-map', '0:a:0',
+                                     '-map', '1:s:0',
+                                     '-c:v', 'copy',
+                                     '-c:a', 'copy',
+                                     '-c:s', 'mov_text',
+                                     '-metadata:s:a:0', 'language=jpn',
+                                     '-metadata:s:s:0', 'language=eng',
+                                     os.path.join(temp_dirPath, name + ".mp4")])
+
+                    # remove subtitle file
+                    os.remove(os.path.join(dirPath, name + ".srt"))
+                elif os.path.exists(os.path.join(dirPath, name + ".ass")):
+                    # If .ass subtitle file exist
+                    subprocess.call(['ffmpeg',
+                                    '-i', filePath,
+                                     '-i', os.path.join(dirPath,
+                                                        name + ".ass"),
+                                     '-map', '0:v',
+                                     '-map', '0:a:0',
+                                     '-map', '1:s:0',
+                                     '-c:v', 'copy',
+                                     '-c:a', 'copy',
+                                     '-c:s', 'mov_text',
+                                     '-metadata:s:a:0', 'language=jpn',
+                                     '-metadata:s:s:0', 'language=eng',
+                                     os.path.join(temp_dirPath, name + ".mp4")])
+
+                    # remove subtitle file
+                    os.remove(os.path.join(dirPath, name + ".ass"))
+            except Exception as e:
+                logging.error("{}: {}".format(filePath, e))
                 return
-            elif filename.lower().endswith('.srt') or filename.lower().endswith('.ass'):
-                return
-            elif filename.lower().endswith('.mp4'):
-                
-                try:
-                    # Check subtitle file and Softsub if exist     
-                    if os.path.exists(os.path.join(dirPath, name + ".srt")):
-                        # If .srt subtitle file exist
-                        subprocess.call(['ffmpeg', 
-                                        '-i', filePath,
-                                        '-i', os.path.join(dirPath, name + ".srt"),
-                                        '-map', '0:v',
-                                        '-map', '0:a:0',
-                                        '-map', '1:s:0',
-                                        '-c:v', 'copy',
-                                        '-c:a', 'copy',
-                                        '-c:s', 'mov_text',
-                                        '-metadata:s:s:0', 'language=eng',
-                                        os.path.join(temp_dirPath, name + ".mp4")])
-                        
-                        # remove subtitle file
-                        os.remove(os.path.join(dirPath, name + ".srt"))
-                    elif os.path.exists(os.path.join(dirPath, name + ".ass")):
-                        # If .ass subtitle file exist
-                        subprocess.call(['ffmpeg', 
-                                        '-i', filePath,
-                                        '-i', os.path.join(dirPath, name + ".ass"),
-                                        '-map', '0:v',
-                                        '-map', '0:a:0',
-                                        '-map', '1:s:0',
-                                        '-c:v', 'copy',
-                                        '-c:a', 'copy',
-                                        '-c:s', 'mov_text',
-                                        '-metadata:s:s:0', 'language=eng',
-                                        os.path.join(temp_dirPath, name + ".mp4")])
-                        
-                        # remove subtitle file
-                        os.remove(os.path.join(dirPath, name + ".ass"))
-                except Exception as e:
-                    logging.error("{}: {}".format(filePath, e))
-                    return
-                
-                # Remove old file
-                if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
-                    os.remove(filePath)
-                    shutil.move(os.path.join(temp_dirPath, name + ".mp4"), os.path.join(dirPath, name + ".mp4"))
-                    
-                return
+
+            # Remove old file
+            if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
+                os.remove(filePath)
+                shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
+                            os.path.join(dirPath, name + ".mp4"))
+
+            return
         else:
             kind = filetype.guess(filePath)
             if kind is None:
                 logging.error("{}: File format unknown.".format(filePath))
                 return
             else:
-                logging.error("{}: We do not support {}.".format(filePath, kind.mime))
+                logging.error("{}: We do not support {}.".format(
+                    filePath, kind.mime))
                 return
-        
+
         zip_filename = os.path.basename(filePath)
         dirPath = os.path.dirname(filePath)
-        new_zipObj = zipfile.ZipFile(os.path.join(temp_dirPath, "temp.zip"), 'w')
+        new_zipObj = zipfile.ZipFile(
+            os.path.join(temp_dirPath, "temp.zip"), 'w')
         isWrite = False
         isManhwa = False
-        
+
         combined_image_height = 0
         imageList = []
-        
+
         for fileDirPath in natsorted(zipObj.namelist()):
             if os.path.isdir(fileDirPath):
                 continue
             elif fileDirPath.lower().endswith(image_ext):
-                
+
                 # Check first image if it need to write (Save time)
                 try:
                     image_pil = Image.open(zipObj.open(fileDirPath))
@@ -348,10 +391,10 @@ class Formatter:
                     if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
                         os.remove(os.path.join(temp_dirPath, "temp.zip"))
                     return
-            
+
                 filename = os.path.basename(fileDirPath)
                 name, ext = os.path.splitext(filename)
-                
+
                 # Check all conditions
                 if w > 1024 and h > 1024 and h < 3*w:
                     isWrite = True
@@ -359,47 +402,50 @@ class Formatter:
                     combined_image_width = w
                     combined_image_height += h
                     isWrite = True
-                    isManhwa = True   
+                    isManhwa = True
                 elif filename.lower().endswith(('.jpg', '.png', '.jpeg')):
                     isWrite = True
                 elif filename != fileDirPath:
                     isWrite = True
                 elif name != "1":
                     isWrite = True
-                    
+
                 if not isWrite:
                     break
-                
+
         if isWrite and len(imageList) != 0:
             if not isManhwa:
                 for index, image_pil in enumerate(tqdm(imageList, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
                     image_pil.thumbnail(image_size)
                     image_byte = io.BytesIO()
                     image_pil.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
+                    new_zipObj.writestr(
+                        str(index+1) + ".webp", image_byte.getvalue())
             else:
-                combined_image = Image.new('RGB', (combined_image_width, combined_image_height))
+                combined_image = Image.new(
+                    'RGB', (combined_image_width, combined_image_height))
                 y_offset = 0
                 for image_pil in imageList:
                     w, h = image_pil.size
-                    
+
                     # Ensure that it is all images have same width
                     if w == combined_image_width:
                         combined_image.paste(image_pil, (0, y_offset))
                         y_offset += h
                     else:
-                        image_pil = image_pil.resize((combined_image_width, int(h * (combined_image_width/w))))
+                        image_pil = image_pil.resize(
+                            (combined_image_width, int(h * (combined_image_width/w))))
                         w, h = image_pil.size
                         combined_image.paste(image_pil, (0, y_offset))
                         y_offset += h
-                        
+
                 # Crop each section to specific height
                 slices = int(math.ceil(combined_image_height/image_size[1]))
                 count = 1
                 y = 0
                 crop_images = []
                 for _ in range(slices):
-                    #if we are at the end, set the lower bound to be the bottom of the image
+                    # if we are at the end, set the lower bound to be the bottom of the image
                     if count == slices:
                         lower = combined_image_height
                     else:
@@ -409,47 +455,51 @@ class Formatter:
                     crop_image = combined_image.crop(bbox)
                     crop_images.append(crop_image)
                     y += image_size[1]
-                    count +=1
-                
+                    count += 1
+
                 for index, crop_image in enumerate(tqdm(crop_images, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
                     image_byte = io.BytesIO()
                     crop_image.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(str(index+1) + ".webp", image_byte.getvalue())
+                    new_zipObj.writestr(
+                        str(index+1) + ".webp", image_byte.getvalue())
         elif isWrite and len(imageList) == 0:
-            logging.error("{}: Can not find image file in archieve.".format(filePath))
+            logging.error(
+                "{}: Can not find image file in archieve.".format(filePath))
             return
-            
+
         zipObj.close()
         new_zipObj.close()
-        
+
         # Remove file -> Rename temp to file
         if isWrite:
             if os.path.exists(filePath):
-                
+
                 # Remove old file
                 os.remove(filePath)
-                
+
                 # Check if file exist
                 if not os.path.exists(os.path.join(dirPath, zip_filename)):
                     # Move file from temp folder
-                    shutil.move(os.path.join(temp_dirPath, "temp.zip"), os.path.join(dirPath, zip_filename))
+                    shutil.move(os.path.join(temp_dirPath, "temp.zip"),
+                                os.path.join(dirPath, zip_filename))
                 else:
-                    logging.error("{}: File already exist".format(os.path.join(dirPath, zip_filename)))
+                    logging.error("{}: File already exist".format(
+                        os.path.join(dirPath, zip_filename)))
                     return
         else:
             # Remove temp file
             if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
                 os.remove(os.path.join(temp_dirPath, "temp.zip"))
 
-
     def cleanRecur(self, author, author_path, isChapter=False):
-        
+
         if isChapter:
             # Progress description
             desc = "Chapter Folder Progress"
-            
+
             # Only one image in Chapter Folder mean it is thumbnail
-            imageList = [chapFile for chapFile in os.listdir(author_path) if chapFile.lower().endswith(image_ext)]
+            imageList = [chapFile for chapFile in os.listdir(
+                author_path) if chapFile.lower().endswith(image_ext)]
             if len(os.listdir(author_path)) >= 1 and len(imageList) == 1:
                 isThumbnail = True
             else:
@@ -457,19 +507,19 @@ class Formatter:
         else:
             # Progress description
             desc = "Author Folder Progress"
-        
+
         chapters_index_list = []
         for fileDir in tqdm(os.listdir(author_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             if os.path.isdir(os.path.join(author_path, fileDir)):
-                name = fileDir 
+                name = fileDir
             else:
                 name = os.path.splitext(fileDir)[0]
-                
+
             # Sep filename and author from format '[author|artist] filename.ext'
             _, new_name = self.sep_author_name(name)
             if isChapter:
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
-                    
+
                     # Thumbnail in chapter folder
                     new_name = "[" + author + "] " + "thumbnail"
                 else:
@@ -480,22 +530,23 @@ class Formatter:
                             # Not include special chapter like 2a, 3b, 4c
                             chapters_index_list.append(int(match_list[0]))
                     else:
-                        logging.error("{}: Can not find chapter indicate pattern, please check.".format(os.path.join(author_path, fileDir)))
+                        logging.error("{}: Can not find chapter indicate pattern, please check.".format(
+                            os.path.join(author_path, fileDir)))
                         continue
             else:
                 # add author name to the front
                 new_name = "[" + author + "] " + new_name
-                
+
             if os.path.isfile(os.path.join(author_path, fileDir)):
                 name, ext = os.path.splitext(fileDir)
                 new_fileDir = new_name + ext
             else:
                 new_fileDir = new_name
-                
+
             # Rename fileDir
             if new_fileDir not in os.listdir(author_path):
                 os.rename(os.path.join(author_path, fileDir),
-                                os.path.join(author_path, new_fileDir))
+                          os.path.join(author_path, new_fileDir))
             elif new_name != name:
                 suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                 time.sleep(1)
@@ -507,34 +558,38 @@ class Formatter:
                     new_fileDir = new_name
                 if new_fileDir not in os.listdir(author_path):
                     os.rename(os.path.join(author_path, fileDir),
-                            os.path.join(author_path, new_fileDir))
+                              os.path.join(author_path, new_fileDir))
                 else:
-                    logging.error("{}: Problem with renaming file, please check.".format(os.path.join(author_path, fileDir)))
+                    logging.error("{}: Problem with renaming file, please check.".format(
+                        os.path.join(author_path, fileDir)))
                     continue
-                        
+
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
                     # Remove empty folder
                     os.rmdir(os.path.join(author_path, new_fileDir))
                 else:
-                    self.cleanRecur(author, os.path.join(author_path, new_fileDir), isChapter=True)
+                    self.cleanRecur(author, os.path.join(
+                        author_path, new_fileDir), isChapter=True)
             else:
                 self.cleanFile(os.path.join(author_path, new_fileDir))
-        
+
         # Check if all chapter complete (Not include special chapter)
         if isChapter:
             if len(chapters_index_list) != 0:
-                missing_chapter = [] 
+                missing_chapter = []
                 for index in range(1, natsorted(chapters_index_list)[-1]+1):
                     if index not in chapters_index_list:
                         missing_chapter.append(index)
-                        
+
                 if len(missing_chapter) != 0:
-                    missing_text = "{}: Chapter {} is missing.".format(author_path, missing_chapter)
+                    missing_text = "{}: Chapter {} is missing.".format(
+                        author_path, missing_chapter)
                     logging.error(missing_text)
                     with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
                         f.write(missing_text)
                         f.write("\n")
             else:
-                logging.error("{}: Can not find chapter item".format(author_path))
+                logging.error(
+                    "{}: Can not find chapter item".format(author_path))
                 return
