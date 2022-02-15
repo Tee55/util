@@ -221,6 +221,14 @@ class Formatter:
 
             # ffmpeg initial command
             command = ['-i', filePath]
+            
+            # Subtitle file
+            hasSubFile = False
+            for ext in subtitle_ext:
+                if os.path.exists(os.path.join(dirPath, name + ext)): 
+                    command.extend(['-i', os.path.join(dirPath, name + ext)])
+                    hasSubFile = True
+                    break
 
             # Video track
             if len(mkv.video_tracks) == 1:
@@ -248,17 +256,14 @@ class Formatter:
                     break
             else:
                 if len(mkv.audio_tracks) != 0:
-                    command.extend(['-map', '0:a:0'])
+                    command.extend(['-map', '0:a:0', '-c:a', 'copy'])
                 else:
                     logging.error("{}: There is no audio track.".format(filePath))
                     return
 
             # Subtitle track
-            for ext in subtitle_ext:
-                if os.path.exists(os.path.join(dirPath, name + ext)):
-                    command.extend(['-i', os.path.join(dirPath, name + ext)])
-                    command.extend(['-map', '1:s:0'])
-                    break
+            if hasSubFile:
+                command.extend(['-map', '1:s:0', '-c:s', 'mov_text'])
             else:
                 for index, track in enumerate(mkv.subtitle_tracks):
                     if track.language == "jpn":
@@ -278,7 +283,7 @@ class Formatter:
                         else:
                             logging.error("{}: Subtitle only support ass codec".format(filePath))
                             return
-
+            
             # Add metadata and output
             command.extend(['-metadata:s:a:0', 'language=jpn',
                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
@@ -314,16 +319,13 @@ class Formatter:
             # Merge subtitle file if exist
             
             # ffmpeg initial command
-            command = ['-i', filePath, '-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy']
+            command = ['-i', filePath]
             
-            # Subtitle track
+            # Subtitle file
             for ext in subtitle_ext:
-                if os.path.exists(os.path.join(dirPath, name + ext)):
-                    command.extend(['-i', os.path.join(dirPath, name + ext), '-map', '1:s:0', '-c:s', 'mov_text'])
-                    
-                    # Add metadata and output
-                    command.extend(['-metadata:s:a:0', 'language=jpn',
-                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
+                if os.path.exists(os.path.join(dirPath, name + ext)): 
+                    command.extend(['-i', os.path.join(dirPath, name + ext), '-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
+                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
                     
                     # Run command
                     ffpb.main(command, tqdm=tqdm)
