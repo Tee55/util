@@ -238,6 +238,7 @@ class Formatter:
                                          '-c:s', 'mov_text',
                                          '-metadata:s:a:0', 'language=jpn',
                                          '-metadata:s:s:0', 'language=eng',
+                                         '-strict', '-2',
                                          os.path.join(temp_dirPath, name + ".mp4")])
 
                         # remove srt subtitle file
@@ -257,6 +258,7 @@ class Formatter:
                                          '-c:s', 'mov_text',
                                          '-metadata:s:a:0', 'language=jpn',
                                          '-metadata:s:s:0', 'language=eng',
+                                         '-strict', '-2',
                                          os.path.join(temp_dirPath, name + ".mp4")])
                         
                         # remove ass subtitle file
@@ -274,6 +276,7 @@ class Formatter:
                                          '-c:s', 'mov_text',
                                          '-metadata:s:a:0', 'language=jpn',
                                          '-metadata:s:s:0', 'language=eng',
+                                         '-strict', '-2',
                                          os.path.join(temp_dirPath, name + ".mp4")])
                     # Sometime there is no metadata, then choose first audio and sub track.
                     else:
@@ -287,6 +290,7 @@ class Formatter:
                                          '-c:s', 'mov_text',
                                          '-metadata:s:a:0', 'language=jpn',
                                          '-metadata:s:s:0', 'language=eng',
+                                         '-strict', '-2',
                                          os.path.join(temp_dirPath, name + ".mp4")])
 
                 except Exception as e:
