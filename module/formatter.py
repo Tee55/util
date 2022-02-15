@@ -16,6 +16,7 @@ import subprocess
 import filetype
 import logging
 import enzyme
+import ffpb
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -219,14 +220,14 @@ class Formatter:
             mkv = enzyme.MKV(file)
 
             # ffmpeg initial command
-            command = ['ffmpeg', '-i', filePath]
+            command = ['-i', filePath]
 
             # Video track
             if len(mkv.video_tracks) == 1:
                 command.extend(['-map', '0:v:0'])
 
-                # Check if video is h264
-                if mkv.video_tracks[0].codec_id != "V_MPEG4/ISO/AVC":
+                # Check if video is h264 or h265
+                if mkv.video_tracks[0].codec_id not in ["V_MPEG4/ISO/AVC", "V_MPEGH/ISO/HEVC"]:
                     command.extend(['-c:v', 'libx264'])
                 else:
                     command.extend(['-c:v', 'copy'])
@@ -285,21 +286,11 @@ class Formatter:
             command.extend(['-metadata:s:a:0', 'language=jpn',
                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
             
-             # make ffmpeg quieter, show only error
-            command.extend(['-hide_banner', '-loglevel', 'error'])
+            ffpb.main(command)
             
-            # Final command
-            print("Command: {}".format(" ".join(command)))
-            print("Running please wait...")
+            # Close mkv file
+            file.close()
             
-            try:
-                subprocess.call(command)
-            except Exception as e:
-                logging.error("{}: {}".format(filePath, e))
-                return
-            
-            print("Finish")
-
             # Remove old file if convert success
             if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
                 

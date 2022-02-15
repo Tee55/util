@@ -5,3 +5,4 @@ rarfile
 tqdm
 pyinstaller
 filetype
+ffpb
