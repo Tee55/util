@@ -303,12 +303,7 @@ class Formatter:
                 else:
                     logging.error("{}: File not exist".format(filePath))
                     return
-                
-                for ext in subtitle_ext:
-                    if os.path.exists(os.path.join(dirPath, name + ext)):
-                        os.remove(os.path.join(dirPath, name + ext))
-                        break
-                
+
                 shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
                             os.path.join(dirPath, name + ".mp4"))
                 
@@ -340,12 +335,7 @@ class Formatter:
                 else:
                     logging.error("{}: File not exist".format(filePath))
                     return
-                
-                for ext in subtitle_ext:
-                    if os.path.exists(os.path.join(dirPath, name + ext)):
-                        os.remove(os.path.join(dirPath, name + ext))
-                        break
-                
+
                 shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
                             os.path.join(dirPath, name + ".mp4"))
                 
@@ -535,12 +525,12 @@ class Formatter:
             else:
                 # add author name to the front
                 new_name = "[" + author + "] " + new_name
-
-            if os.path.isfile(os.path.join(author_path, fileDir)):
+            
+            if os.path.isdir(os.path.join(author_path, fileDir)):
+                new_fileDir = new_name
+            else:
                 name, ext = os.path.splitext(fileDir)
                 new_fileDir = new_name + ext
-            else:
-                new_fileDir = new_name
 
             # Rename fileDir
             if new_fileDir not in os.listdir(author_path):
