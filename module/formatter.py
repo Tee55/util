@@ -267,7 +267,7 @@ class Formatter:
                         if track.codec_id == "S_TEXT/ASS":
                             command.extend(['-c:s', 'mov_text'])
                         else:
-                            logging.error("{}: Subtitle only support ass codec".format(filePath))
+                            logging.error("{}: Subtitle only support ass (text-based subtitle) codec".format(filePath))
                             return
                         break
                 else:
@@ -277,16 +277,13 @@ class Formatter:
                             command.extend(['-c:s', 'mov_text'])
                         else:
                             logging.error("{}: Subtitle only support ass codec".format(filePath))
-                            return 
-                    else:
-                        logging.error("{}: There is no subtitle track.".format(filePath))
-                        return
+                            return
 
             # Add metadata and output
             command.extend(['-metadata:s:a:0', 'language=jpn',
                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
             
-            ffpb.main(command)
+            ffpb.main(command, tqdm=tqdm)
             
             # Close mkv file
             file.close()
@@ -312,6 +309,37 @@ class Formatter:
             return
 
         elif filePath.lower().endswith('.mp4'):
+            
+            # Merge subtitle file if exist
+            
+            # ffmpeg initial command
+            command = ['-i', filePath, '-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy']
+            
+            # Subtitle track
+            for ext in subtitle_ext:
+                if os.path.exists(os.path.join(dirPath, name + ext)):
+                    command.extend(['-i', os.path.join(dirPath, name + ext), '-map', '1:s:0', '-c:s', 'mov_text'])
+                    ffpb.main(command, tqdm=tqdm)
+                    break
+                
+            # Remove old file if convert success
+            if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
+                
+                # Remove old file, subtitle file
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                else:
+                    logging.error("{}: File not exist".format(filePath))
+                    return
+                
+                for ext in subtitle_ext:
+                    if os.path.exists(os.path.join(dirPath, name + ext)):
+                        os.remove(os.path.join(dirPath, name + ext))
+                        break
+                
+                shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
+                            os.path.join(dirPath, name + ".mp4"))
+                
             return
         else:
             kind = filetype.guess(filePath)
