@@ -283,6 +283,7 @@ class Formatter:
             command.extend(['-metadata:s:a:0', 'language=jpn',
                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
             
+            # Run command
             ffpb.main(command, tqdm=tqdm)
             
             # Close mkv file
@@ -319,6 +320,12 @@ class Formatter:
             for ext in subtitle_ext:
                 if os.path.exists(os.path.join(dirPath, name + ext)):
                     command.extend(['-i', os.path.join(dirPath, name + ext), '-map', '1:s:0', '-c:s', 'mov_text'])
+                    
+                    # Add metadata and output
+                    command.extend(['-metadata:s:a:0', 'language=jpn',
+                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
+                    
+                    # Run command
                     ffpb.main(command, tqdm=tqdm)
                     break
                 
