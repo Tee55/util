@@ -1,4 +1,4 @@
-from module.general import image_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
+from module.general import image_ext, subtitle_ext, image_size, temp_dirPath, TqdmLoggingHandler
 import shutil
 from tqdm import tqdm
 import os
@@ -134,6 +134,15 @@ class Formatter:
             return None, name_output
 
     def cleanFile(self, filePath):
+        
+        if not os.path.isfile(filePath):
+            logging.error("{}: Path is not file".format(filePath))
+            return
+
+        filename = os.path.basename(filePath)
+        name, ext = os.path.splitext(filename)
+        dirPath = os.path.dirname(filePath)
+
         if zipfile.is_zipfile(filePath):
             try:
                 zipObj = zipfile.ZipFile(filePath, 'r')
@@ -157,10 +166,9 @@ class Formatter:
             image_pil = image_pil.convert('RGB')
             w, h = image_pil.size
             if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
+
+                # Resize ratio image
                 image_pil.thumbnail(image_size)
-                filename = os.path.basename(filePath)
-                name, ext = os.path.splitext(filename)
-                dirPath = os.path.dirname(filePath)
 
                 # Check if .webp exist or not
                 if name + ".webp" not in os.listdir(dirPath):
@@ -169,24 +177,19 @@ class Formatter:
                     # Remove old file
                     if os.path.exists(filePath):
                         os.remove(filePath)
-                    return
                 else:
                     logging.error(
                         "{}: There is already .webp file, please check.".format(filePath))
                     return
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
+
+                # Resize ratio image
                 image_pil.thumbnail(image_size)
-                filename = os.path.basename(filePath)
-                name, ext = os.path.splitext(filename)
-                dirPath = os.path.dirname(filePath)
 
                 # Override old .webp
                 image_pil.save(os.path.join(dirPath, name +
                                ".webp"), "webp", quality=100)
-                return
-            else:
-                # Perfect
-                return
+            return
         elif filePath.lower().endswith(".gif"):
             image_pil = Image.open(filePath)
             frames = ImageSequence.Iterator(image_pil)
@@ -202,160 +205,122 @@ class Formatter:
                         yield thumbnail
 
                 frames = thumbnails(frames)
-                filename = os.path.basename(filePath)
-                name, ext = os.path.splitext(filename)
-                dirPath = os.path.dirname(filePath)
 
                 # Override old .gif
                 image_pil.save(os.path.join(dirPath, name + ".gif"),
                                save_all=True, append_images=list(frames))
-                return
-            else:
-                # Perfect
-                return
-        elif filePath.lower().endswith('.srt') or filePath.lower().endswith('.ass'):
+            return
+        elif filePath.lower().endswith(subtitle_ext):
             # Subtitle File
             return
         elif filePath.lower().endswith('.mkv'):
-            filename = os.path.basename(filePath)
-            name, ext = os.path.splitext(filename)
-            dirPath = os.path.dirname(filePath)
-            with open(filePath, 'rb') as f:
-                mkv = enzyme.MKV(f)
-                try:
-                    # Softsub
-                    # If .srt subtitle file exist
-                    if os.path.exists(os.path.join(dirPath, name + ".srt")):
-                        subprocess.call(['ffmpeg',
-                                        '-i', filePath,
-                                         '-i', os.path.join(dirPath,
-                                                            name + ".srt"),
-                                         '-map', '0:v',
-                                         '-map', '0:a:0',
-                                         '-map', '1:s:0',
-                                         '-c:v', 'copy',
-                                         '-c:a', 'copy',
-                                         '-c:s', 'mov_text',
-                                         '-metadata:s:a:0', 'language=jpn',
-                                         '-metadata:s:s:0', 'language=eng',
-                                         '-strict', '-2',
-                                         os.path.join(temp_dirPath, name + ".mp4")])
 
-                        # remove srt subtitle file
-                        os.remove(os.path.join(dirPath, name + ".srt"))
-                        
-                    # If .ass subtitle file exist
-                    elif os.path.exists(os.path.join(dirPath, name + ".ass")):
-                        subprocess.call(['ffmpeg',
-                                        '-i', filePath,
-                                         '-i', os.path.join(dirPath,
-                                                            name + ".ass"),
-                                         '-map', '0:v',
-                                         '-map', '0:a:0',
-                                         '-map', '1:s:0',
-                                         '-c:v', 'copy',
-                                         '-c:a', 'copy',
-                                         '-c:s', 'mov_text',
-                                         '-metadata:s:a:0', 'language=jpn',
-                                         '-metadata:s:s:0', 'language=eng',
-                                         '-strict', '-2',
-                                         os.path.join(temp_dirPath, name + ".mp4")])
-                        
-                        # remove ass subtitle file
-                        os.remove(os.path.join(dirPath, name + ".ass"))
-                        
-                    # Select threr are >1 audio track and >2 subtitle track (sub and no sub), then choose jpn audio and eng subtitle only
-                    elif len(mkv.audio_tracks) > 1 and len(mkv.subtitle_tracks) > 2:
-                        subprocess.call(['ffmpeg',
-                                        '-i', filePath,
-                                         '-map', '0:v',
-                                         '-map', '0:a:m:language:jpn',
-                                         '-map', '0:s:m:language:eng',
-                                         '-c:v', 'copy',
-                                         '-c:a', 'copy',
-                                         '-c:s', 'mov_text',
-                                         '-metadata:s:a:0', 'language=jpn',
-                                         '-metadata:s:s:0', 'language=eng',
-                                         '-strict', '-2',
-                                         os.path.join(temp_dirPath, name + ".mp4")])
-                    # Sometime there is no metadata, then choose first audio and sub track.
+            file = open(filePath, 'rb')
+            mkv = enzyme.MKV(file)
+
+            # ffmpeg initial command
+            command = ['ffmpeg', '-i', filePath]
+
+            # Video track
+            if len(mkv.video_tracks) == 1:
+                command.extend(['-map', '0:v:0'])
+
+                # Check if video is h264
+                if mkv.video_tracks[0].codec_id != "V_MPEG4/ISO/AVC":
+                    command.extend(['-c:v', 'libx264'])
+                else:
+                    command.extend(['-c:v', 'copy'])
+            else:
+                logging.error("{}: There are more than one video track.")
+                return
+
+            # Audio track
+            for index, track in enumerate(mkv.audio_tracks):
+                if track.language == "jpn":
+                    command.extend(['-map', '0:a:' + str(index)])
+
+                    # Check if audio is aac
+                    if track.codec_id != "A_AAC":
+                        command.extend(['-c:a', 'aac'])
                     else:
-                        subprocess.call(['ffmpeg',
-                                        '-i', filePath,
-                                         '-map', '0:v',
-                                         '-map', '0:a:0',
-                                         '-map', '0:s:0',
-                                         '-c:v', 'copy',
-                                         '-c:a', 'copy',
-                                         '-c:s', 'mov_text',
-                                         '-metadata:s:a:0', 'language=jpn',
-                                         '-metadata:s:s:0', 'language=eng',
-                                         '-strict', '-2',
-                                         os.path.join(temp_dirPath, name + ".mp4")])
-
-                except Exception as e:
-                    logging.error("{}: {}".format(filePath, e))
+                        command.extend(['-c:a', 'copy'])
+                    break
+            else:
+                if len(mkv.audio_tracks) != 0:
+                    command.extend(['-map', '0:a:0'])
+                else:
+                    logging.error("{}: There is no audio track.".format(filePath))
                     return
 
-            # Remove old file if convert success
-            if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
-                os.remove(filePath)
-                shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
-                            os.path.join(dirPath, name + ".mp4"))
-            return
+            # Subtitle track
+            for ext in subtitle_ext:
+                if os.path.exists(os.path.join(dirPath, name + ext)):
+                    command.extend(['-i', os.path.join(dirPath, name + ext)])
+                    command.extend(['-map', '1:s:0'])
+                    break
+            else:
+                for index, track in enumerate(mkv.subtitle_tracks):
+                    if track.language == "jpn":
+                        command.extend(['-map', '0:s:' + str(index)])
+                        
+                        if track.codec_id == "S_TEXT/ASS":
+                            command.extend(['-c:s', 'mov_text'])
+                        else:
+                            logging.error("{}: Subtitle only support ass codec".format(filePath))
+                            return
+                        break
+                else:
+                    if len(mkv.subtitle_tracks) != 0:
+                        command.extend(['-map', '0:s:0'])
+                        if mkv.subtitle_tracks[0].codec_id == "S_TEXT/ASS":
+                            command.extend(['-c:s', 'mov_text'])
+                        else:
+                            logging.error("{}: Subtitle only support ass codec".format(filePath))
+                            return 
+                    else:
+                        logging.error("{}: There is no subtitle track.".format(filePath))
+                        return
 
-        elif filePath.lower().endswith('.mp4'):
-            filename = os.path.basename(filePath)
-            name, ext = os.path.splitext(filename)
-            dirPath = os.path.dirname(filePath)
+            # Add metadata and output
+            command.extend(['-metadata:s:a:0', 'language=jpn',
+                           '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
+            
+             # make ffmpeg quieter, show only error
+            command.extend(['-hide_banner', '-loglevel', 'error'])
+            
+            # Final command
+            print("Command: {}".format(" ".join(command)))
+            print("Running please wait...")
+            
             try:
-                # Check subtitle file and Softsub if exist
-                if os.path.exists(os.path.join(dirPath, name + ".srt")):
-                    # If .srt subtitle file exist
-                    subprocess.call(['ffmpeg',
-                                    '-i', filePath,
-                                     '-i', os.path.join(dirPath,
-                                                        name + ".srt"),
-                                     '-map', '0:v',
-                                     '-map', '0:a:0',
-                                     '-map', '1:s:0',
-                                     '-c:v', 'copy',
-                                     '-c:a', 'copy',
-                                     '-c:s', 'mov_text',
-                                     '-metadata:s:a:0', 'language=jpn',
-                                     '-metadata:s:s:0', 'language=eng',
-                                     os.path.join(temp_dirPath, name + ".mp4")])
-
-                    # remove subtitle file
-                    os.remove(os.path.join(dirPath, name + ".srt"))
-                elif os.path.exists(os.path.join(dirPath, name + ".ass")):
-                    # If .ass subtitle file exist
-                    subprocess.call(['ffmpeg',
-                                    '-i', filePath,
-                                     '-i', os.path.join(dirPath,
-                                                        name + ".ass"),
-                                     '-map', '0:v',
-                                     '-map', '0:a:0',
-                                     '-map', '1:s:0',
-                                     '-c:v', 'copy',
-                                     '-c:a', 'copy',
-                                     '-c:s', 'mov_text',
-                                     '-metadata:s:a:0', 'language=jpn',
-                                     '-metadata:s:s:0', 'language=eng',
-                                     os.path.join(temp_dirPath, name + ".mp4")])
-
-                    # remove subtitle file
-                    os.remove(os.path.join(dirPath, name + ".ass"))
+                subprocess.call(command)
             except Exception as e:
                 logging.error("{}: {}".format(filePath, e))
                 return
+            
+            print("Finish")
 
-            # Remove old file
-            if os.path.exists(filePath) and os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
-                os.remove(filePath)
+            # Remove old file if convert success
+            if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
+                
+                # Remove old file, subtitle file
+                if os.path.exists(filePath):
+                    os.remove(filePath)
+                else:
+                    logging.error("{}: File not exist".format(filePath))
+                    return
+                
+                for ext in subtitle_ext:
+                    if os.path.exists(os.path.join(dirPath, name + ext)):
+                        os.remove(os.path.join(dirPath, name + ext))
+                        break
+                
                 shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
                             os.path.join(dirPath, name + ".mp4"))
+                
+            return
 
+        elif filePath.lower().endswith('.mp4'):
             return
         else:
             kind = filetype.guess(filePath)
@@ -367,8 +332,6 @@ class Formatter:
                     filePath, kind.mime))
                 return
 
-        zip_filename = os.path.basename(filePath)
-        dirPath = os.path.dirname(filePath)
         new_zipObj = zipfile.ZipFile(
             os.path.join(temp_dirPath, "temp.zip"), 'w')
         isWrite = False
@@ -396,8 +359,8 @@ class Formatter:
                         os.remove(os.path.join(temp_dirPath, "temp.zip"))
                     return
 
-                filename = os.path.basename(fileDirPath)
-                name, ext = os.path.splitext(filename)
+                zipItem_filename = os.path.basename(fileDirPath)
+                zipItem_name, ext = os.path.splitext(filename)
 
                 # Check all conditions
                 if w > 1024 and h > 1024 and h < 3*w:
@@ -407,11 +370,11 @@ class Formatter:
                     combined_image_height += h
                     isWrite = True
                     isManhwa = True
-                elif filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                elif zipItem_filename.lower().endswith(('.jpg', '.png', '.jpeg')):
                     isWrite = True
-                elif filename != fileDirPath:
+                elif zipItem_filename != fileDirPath:
                     isWrite = True
-                elif name != "1":
+                elif zipItem_name != "1":
                     isWrite = True
 
                 if not isWrite:
@@ -477,23 +440,27 @@ class Formatter:
         # Remove file -> Rename temp to file
         if isWrite:
             if os.path.exists(filePath):
-
                 # Remove old file
                 os.remove(filePath)
+            else:
+                logging.error("{}: File not exist".format(filePath))
+                return
 
-                # Check if file exist
-                if not os.path.exists(os.path.join(dirPath, zip_filename)):
-                    # Move file from temp folder
-                    shutil.move(os.path.join(temp_dirPath, "temp.zip"),
-                                os.path.join(dirPath, zip_filename))
-                else:
-                    logging.error("{}: File already exist".format(
-                        os.path.join(dirPath, zip_filename)))
-                    return
+            # Check if file exist
+            if not os.path.exists(os.path.join(dirPath, filename)):
+                # Move file from temp folder
+                shutil.move(os.path.join(temp_dirPath, "temp.zip"),
+                            os.path.join(dirPath, filename))
+                return
+            else:
+                logging.error("{}: File already exist".format(
+                    os.path.join(dirPath, filename)))
+                return
         else:
             # Remove temp file
             if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
                 os.remove(os.path.join(temp_dirPath, "temp.zip"))
+            return
 
     def cleanRecur(self, author, author_path, isChapter=False):
 

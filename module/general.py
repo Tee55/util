@@ -4,6 +4,7 @@ from tqdm import tqdm
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 image_ext = ('.jpg', '.png', '.webp', '.jpeg')
 video_ext = ('.mp4', '.avi', '.mkv')
+subtitle_ext = ('.srt', '.ass')
 image_size = (1024, 1024)
 temp_dirPath = "./temp/"
 
