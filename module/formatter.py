@@ -12,7 +12,6 @@ import rarfile
 import tarfile
 import io
 import math
-import subprocess
 import filetype
 import logging
 import enzyme
@@ -297,7 +296,7 @@ class Formatter:
             # Remove old file if convert success
             if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
                 
-                # Remove old file, subtitle file
+                # Remove old file
                 if os.path.exists(filePath):
                     os.remove(filePath)
                 else:
@@ -329,7 +328,7 @@ class Formatter:
             # Remove old file if convert success
             if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
                 
-                # Remove old file, subtitle file
+                # Remove old file
                 if os.path.exists(filePath):
                     os.remove(filePath)
                 else:
