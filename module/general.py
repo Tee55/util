@@ -7,6 +7,8 @@ video_ext = ('.mp4', '.avi', '.mkv')
 subtitle_ext = ('.srt', '.ass')
 image_size = (1024, 1024)
 temp_dirPath = "./temp/"
+leftkeys = (81, 110, 65361, 2424832)
+rightkeys = (83, 109, 65363, 2555904)
 
 class TqdmLoggingHandler(logging.Handler):
     def __init__(self, level=logging.NOTSET):
