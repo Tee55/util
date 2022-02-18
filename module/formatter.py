@@ -222,6 +222,7 @@ class Formatter:
             command = ['-i', filePath]
             
             # Subtitle file
+            subFilePath = None
             for ext in subtitle_ext:
                 if os.path.exists(os.path.join(dirPath, name + ext)):
                     subFilePath = os.path.join(dirPath, name + ext)
@@ -319,6 +320,7 @@ class Formatter:
             command = ['-i', filePath]
             
             # Subtitle file
+            subFilePath = None
             for ext in subtitle_ext:
                 if os.path.exists(os.path.join(dirPath, name + ext)):
                     subFilePath = os.path.join(dirPath, name + ext)
