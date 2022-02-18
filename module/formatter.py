@@ -88,14 +88,14 @@ class Formatter:
                     new_author = self.cleanName(author, isAuthor=True)
 
                     # Rename author folder
-                    if new_author not in os.listdir(contentPath):
+                    if new_author not in os.listdir(contentPath) and not os.path.exists(os.path.join(contentPath, new_author)):
                         os.rename(os.path.join(contentPath, author),
                                   os.path.join(contentPath, new_author))
                     elif new_author != author:
                         suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                         time.sleep(1)
                         new_author = " ".join([new_author, suffix])
-                        if new_author not in os.listdir(contentPath):
+                        if new_author not in os.listdir(contentPath) and not os.path.exists(os.path.join(contentPath, new_author)):
                             os.rename(os.path.join(contentPath, author),
                                       os.path.join(contentPath, new_author))
                         else:
@@ -171,7 +171,7 @@ class Formatter:
                 image_pil.thumbnail(image_size)
 
                 # Check if .webp exist or not
-                if name + ".webp" not in os.listdir(dirPath):
+                if name + ".webp" not in os.listdir(dirPath) and not os.path.exists(os.path.join(dirPath, name + ".webp")):
                     image_pil.save(os.path.join(
                         dirPath, name + ".webp"), "webp", quality=100)
                     # Remove old file
@@ -222,11 +222,10 @@ class Formatter:
             command = ['-i', filePath]
             
             # Subtitle file
-            hasSubFile = False
             for ext in subtitle_ext:
-                if os.path.exists(os.path.join(dirPath, name + ext)): 
-                    command.extend(['-i', os.path.join(dirPath, name + ext)])
-                    hasSubFile = True
+                if os.path.exists(os.path.join(dirPath, name + ext)):
+                    subFilePath = os.path.join(dirPath, name + ext)
+                    command.extend(['-i', subFilePath])
                     break
 
             # Video track
@@ -261,7 +260,7 @@ class Formatter:
                     return
 
             # Subtitle track
-            if hasSubFile:
+            if subFilePath:
                 command.extend(['-map', '1:s:0', '-c:s', 'mov_text'])
             else:
                 for index, track in enumerate(mkv.subtitle_tracks):
@@ -302,6 +301,10 @@ class Formatter:
                 else:
                     logging.error("{}: File not exist".format(filePath))
                     return
+                
+                # Remove subtitle file
+                if subFilePath and os.path.exists(subFilePath):
+                    os.remove(subFilePath)
 
                 shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
                             os.path.join(dirPath, name + ".mp4"))
@@ -317,10 +320,10 @@ class Formatter:
             
             # Subtitle file
             for ext in subtitle_ext:
-                if os.path.exists(os.path.join(dirPath, name + ext)): 
-                    command.extend(['-i', os.path.join(dirPath, name + ext), '-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
+                if os.path.exists(os.path.join(dirPath, name + ext)):
+                    subFilePath = os.path.join(dirPath, name + ext)
+                    command.extend(['-i', subFilePath, '-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
                             '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
-                    
                     # Run command
                     ffpb.main(command, tqdm=tqdm)
                     break
@@ -334,6 +337,10 @@ class Formatter:
                 else:
                     logging.error("{}: File not exist".format(filePath))
                     return
+                
+                # Remove subtitle file
+                if subFilePath and os.path.exists(subFilePath):
+                    os.remove(subFilePath)
 
                 shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
                             os.path.join(dirPath, name + ".mp4"))
@@ -532,9 +539,9 @@ class Formatter:
                 new_fileDir = new_name + ext
 
             # Rename fileDir
-            if new_fileDir not in os.listdir(author_path):
+            if new_fileDir not in os.listdir(author_path) and not os.path.exists(os.path.join(author_path, fileDir)):
                 os.rename(os.path.join(author_path, fileDir),
-                          os.path.join(author_path, new_fileDir))
+                        os.path.join(author_path, new_fileDir))
             elif new_name != name:
                 suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                 time.sleep(1)
@@ -544,7 +551,7 @@ class Formatter:
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-                if new_fileDir not in os.listdir(author_path):
+                if new_fileDir not in os.listdir(author_path) and not os.path.exists(os.path.join(author_path, fileDir)):
                     os.rename(os.path.join(author_path, fileDir),
                               os.path.join(author_path, new_fileDir))
                 else:

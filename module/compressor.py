@@ -47,7 +47,7 @@ class Compressor:
                     author = "unknown"
                 
                 # Create author folder
-                if author not in os.listdir(srcPath):
+                if author not in os.listdir(srcPath) and not os.path.exists(os.path.join(srcPath, author)):
                     os.mkdir(os.path.join(srcPath, author))
 
                 if filename.lower().endswith(image_ext):
