@@ -79,9 +79,9 @@ class Updater:
             filename = os.path.basename(fullPath)
             name = os.path.splitext(filename)[0]
             movePath = os.path.join(targetPath, author, filename)
-            if name not in target_namelist and not os.path.exists(movePath):
+            if name not in target_namelist:
                 # Create author folder if not exist
-                if not os.path.exists(os.path.join(targetPath, author)):
+                if author not in os.listdir(targetPath):
                     os.makedirs(os.path.join(targetPath, author))
                 
                 # Move file

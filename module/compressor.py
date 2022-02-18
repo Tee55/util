@@ -47,7 +47,7 @@ class Compressor:
                     author = "unknown"
                 
                 # Create author folder
-                if author not in os.listdir(srcPath) and not os.path.exists(os.path.join(srcPath, author)):
+                if author not in os.listdir(srcPath):
                     os.mkdir(os.path.join(srcPath, author))
 
                 if filename.lower().endswith(image_ext):
@@ -77,7 +77,7 @@ class Compressor:
                 elif filename.lower().endswith(zip_ext):
                     dirPath = os.path.dirname(filePath)
                     movePath = os.path.join(srcPath, author, new_name + ext)
-                    if not os.path.exists(movePath):
+                    if new_name + ext not in os.listdir(os.path.join(srcPath, author)):
                         shutil.move(filePath, movePath)
                         
                         # Remove item parent folder if empty
