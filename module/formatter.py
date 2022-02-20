@@ -507,6 +507,8 @@ class Formatter:
 
         chapters_index_list = []
         for fileDir in tqdm(os.listdir(author_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+            
+            # Split ext if it is file to get only filename
             if os.path.isdir(os.path.join(author_path, fileDir)):
                 name = fileDir
             else:
@@ -514,22 +516,22 @@ class Formatter:
 
             # Sep filename and author from format '[author|artist] filename.ext'
             _, new_name = self.sep_author_name(name)
-            if isChapter:
+            
+            # Check if it is chapter folder
+            if isChapter and os.path.isdir(author_path):
                 if fileDir.lower().endswith(image_ext) and isThumbnail:
-
                     # Thumbnail in chapter folder
                     new_name = "[" + author + "] " + "thumbnail"
                 else:
-                    new_name = "[" + author + "] " + new_name
-                    if re.search(r'\d+{1,3}[a-z]$', new_name):
+                    if re.search(r'\d{1,3}[a-z]$', new_name):
                         # special chapter like 2a, 3b, 4c
-                        match = re.search(r'\d+{1,3}[a-z]$', new_name)
-                        new_name = " ".join([new_name, match.group(-1)])
-                    elif re.search(r'\d+{1,3}$', new_name):
+                        match = re.findall(r'\d{1,3}[a-z]$', new_name)
+                        new_name = " ".join([os.path.basename(author_path), match[-1]])
+                    elif re.search(r'\d{1,3}$', new_name):
                         # normal chapter like 2, 3, 4
-                        match = re.search(r'\d+{1,3}$', new_name)
-                        new_name = " ".join([new_name, match.group(-1)])
-                        chapters_index_list.append(int(match.group(-1)))
+                        match = re.findall(r'\d{1,3}$', new_name)
+                        new_name = " ".join([os.path.basename(author_path), match[-1]])
+                        chapters_index_list.append(int(match[-1]))
                     else:
                         logging.error("{}: Can not find chapter indicate pattern, please check.".format(
                             os.path.join(author_path, fileDir)))
