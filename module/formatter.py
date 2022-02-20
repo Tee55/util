@@ -521,11 +521,15 @@ class Formatter:
                     new_name = "[" + author + "] " + "thumbnail"
                 else:
                     new_name = "[" + author + "] " + new_name
-                    if re.search(r'\d+[a-z]?$', new_name):
-                        match_list = re.findall(r'\d+$', new_name)
-                        if len(match_list) >= 1:
-                            # Not include special chapter like 2a, 3b, 4c
-                            chapters_index_list.append(int(match_list[0]))
+                    if re.search(r'\d+{1,3}[a-z]$', new_name):
+                        # special chapter like 2a, 3b, 4c
+                        match = re.search(r'\d+{1,3}[a-z]$', new_name)
+                        new_name = " ".join([new_name, match.group(-1)])
+                    elif re.search(r'\d+{1,3}$', new_name):
+                        # normal chapter like 2, 3, 4
+                        match = re.search(r'\d+{1,3}$', new_name)
+                        new_name = " ".join([new_name, match.group(-1)])
+                        chapters_index_list.append(int(match.group(-1)))
                     else:
                         logging.error("{}: Can not find chapter indicate pattern, please check.".format(
                             os.path.join(author_path, fileDir)))
