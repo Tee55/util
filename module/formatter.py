@@ -1,4 +1,4 @@
-from module.general import image_ext, subtitle_ext, image_size, temp_dirPath, TqdmLoggingHandler
+from module.general import image_ext, subtitle_ext, image_size, temp_dirPath, TqdmLoggingHandler, video_ext
 import shutil
 from tqdm import tqdm
 import os
@@ -213,10 +213,11 @@ class Formatter:
         elif filePath.lower().endswith(subtitle_ext):
             # Subtitle File
             return
-        elif filePath.lower().endswith('.mkv'):
-
-            file = open(filePath, 'rb')
-            mkv = enzyme.MKV(file)
+        elif filePath.lower().endswith(video_ext):
+            
+            # Remove temp.mp4 if exist
+            if os.path.exists(os.path.join(temp_dirPath, "temp.mp4")):
+                os.remove(os.path.join(temp_dirPath, "temp.mp4"))
 
             # ffmpeg initial command
             command = ['-i', filePath]
@@ -228,123 +229,93 @@ class Formatter:
                     subFilePath = os.path.join(dirPath, name + ext)
                     command.extend(['-i', subFilePath])
                     break
+            
+            if filePath.lower().endswith('.mkv'):
+                file = open(filePath, 'rb')
+                mkv = enzyme.MKV(file)
 
-            # Video track
-            if len(mkv.video_tracks) == 1:
-                command.extend(['-map', '0:v:0'])
+                # Video track
+                if len(mkv.video_tracks) == 1:
+                    command.extend(['-map', '0:v:0'])
 
-                # Check if video is h264 or h265
-                if mkv.video_tracks[0].codec_id not in ["V_MPEG4/ISO/AVC", "V_MPEGH/ISO/HEVC"]:
-                    command.extend(['-c:v', 'libx264'])
-                else:
-                    command.extend(['-c:v', 'copy'])
-            else:
-                logging.error("{}: There are more than one video track.")
-                return
-
-            # Audio track
-            for index, track in enumerate(mkv.audio_tracks):
-                if track.language == "jpn":
-                    command.extend(['-map', '0:a:' + str(index)])
-
-                    # Check if audio is aac
-                    if track.codec_id != "A_AAC":
-                        command.extend(['-c:a', 'aac'])
+                    # Check if video is h264 or h265
+                    if mkv.video_tracks[0].codec_id not in ["V_MPEG4/ISO/AVC", "V_MPEGH/ISO/HEVC"]:
+                        command.extend(['-c:v', 'libx264'])
                     else:
-                        command.extend(['-c:a', 'copy'])
-                    break
-            else:
-                if len(mkv.audio_tracks) != 0:
-                    command.extend(['-map', '0:a:0', '-c:a', 'copy'])
+                        command.extend(['-c:v', 'copy'])
                 else:
-                    logging.error("{}: There is no audio track.".format(filePath))
+                    logging.error("{}: There are more than one video track.")
                     return
 
-            # Subtitle track
-            if subFilePath:
-                command.extend(['-map', '1:s:0', '-c:s', 'mov_text'])
-            else:
-                for index, track in enumerate(mkv.subtitle_tracks):
+                # Audio track
+                for index, track in enumerate(mkv.audio_tracks):
                     if track.language == "jpn":
-                        command.extend(['-map', '0:s:' + str(index)])
-                        
-                        if track.codec_id == "S_TEXT/ASS":
-                            command.extend(['-c:s', 'mov_text'])
+                        command.extend(['-map', '0:a:' + str(index)])
+
+                        # Check if audio is aac
+                        if track.codec_id != "A_AAC":
+                            command.extend(['-c:a', 'aac'])
                         else:
-                            logging.error("{}: Subtitle only support ass (text-based subtitle) codec".format(filePath))
-                            return
+                            command.extend(['-c:a', 'copy'])
                         break
                 else:
-                    if len(mkv.subtitle_tracks) != 0:
-                        command.extend(['-map', '0:s:0'])
-                        if mkv.subtitle_tracks[0].codec_id == "S_TEXT/ASS":
-                            command.extend(['-c:s', 'mov_text'])
-                        else:
-                            logging.error("{}: Subtitle only support ass codec".format(filePath))
-                            return
-            
-            # Add metadata and output
-            command.extend(['-metadata:s:a:0', 'language=jpn',
-                           '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
-            
-            # Run command
-            ffpb.main(command, tqdm=tqdm)
-            
-            # Close mkv file
-            file.close()
+                    if len(mkv.audio_tracks) != 0:
+                        command.extend(['-map', '0:a:0', '-c:a', 'copy'])
+                    else:
+                        logging.error("{}: There is no audio track.".format(filePath))
+                        return
+
+                # Subtitle track
+                if subFilePath:
+                    command.extend(['-map', '1:s:0', '-c:s', 'mov_text'])
+                else:
+                    for index, track in enumerate(mkv.subtitle_tracks):
+                        if track.language == "jpn":
+                            command.extend(['-map', '0:s:' + str(index)])
+                            
+                            if track.codec_id == "S_TEXT/ASS":
+                                command.extend(['-c:s', 'mov_text'])
+                            else:
+                                logging.error("{}: Subtitle only support ass (text-based subtitle) codec".format(filePath))
+                                return
+                            break
+                    else:
+                        if len(mkv.subtitle_tracks) != 0:
+                            command.extend(['-map', '0:s:0'])
+                            if mkv.subtitle_tracks[0].codec_id == "S_TEXT/ASS":
+                                command.extend(['-c:s', 'mov_text'])
+                            else:
+                                logging.error("{}: Subtitle only support ass codec".format(filePath))
+                                return
+                
+                # Add metadata and output
+                command.extend(['-metadata:s:a:0', 'language=jpn',
+                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
+                
+                # Run command
+                ffpb.main(command, tqdm=tqdm)
+                
+                # Close mkv file
+                file.close()
+            elif filePath.lower().endswith('.mp4') and subFilePath:
+                command.extend(['-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
+                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
+                
+                # Run command
+                ffpb.main(command, tqdm=tqdm)
             
             # Remove old file if convert success
-            if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
+            if os.path.exists(os.path.join(temp_dirPath, "temp.mp4")):
                 
                 # Remove old file
                 if os.path.exists(filePath):
                     os.remove(filePath)
-                else:
-                    logging.error("{}: File not exist".format(filePath))
-                    return
                 
                 # Remove subtitle file
                 if subFilePath and os.path.exists(subFilePath):
                     os.remove(subFilePath)
 
-                shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
-                            os.path.join(dirPath, name + ".mp4"))
-                
-            return
-
-        elif filePath.lower().endswith('.mp4'):
-            
-            # Merge subtitle file if exist
-            
-            # ffmpeg initial command
-            command = ['-i', filePath]
-            
-            # Subtitle file
-            subFilePath = None
-            for ext in subtitle_ext:
-                if os.path.exists(os.path.join(dirPath, name + ext)):
-                    subFilePath = os.path.join(dirPath, name + ext)
-                    command.extend(['-i', subFilePath, '-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
-                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, name + ".mp4")])
-                    # Run command
-                    ffpb.main(command, tqdm=tqdm)
-                    break
-                
-            # Remove old file if convert success
-            if os.path.exists(os.path.join(temp_dirPath, name + ".mp4")):
-                
-                # Remove old file
-                if os.path.exists(filePath):
-                    os.remove(filePath)
-                else:
-                    logging.error("{}: File not exist".format(filePath))
-                    return
-                
-                # Remove subtitle file
-                if subFilePath and os.path.exists(subFilePath):
-                    os.remove(subFilePath)
-
-                shutil.move(os.path.join(temp_dirPath, name + ".mp4"),
+                shutil.move(os.path.join(temp_dirPath, "temp.mp4"),
                             os.path.join(dirPath, name + ".mp4"))
                 
             return
@@ -586,12 +557,8 @@ class Formatter:
                         missing_chapter.append(index)
 
                 if len(missing_chapter) != 0:
-                    missing_text = "{}: Chapter {} is missing.".format(
-                        author_path, missing_chapter)
-                    logging.error(missing_text)
-                    with open(os.path.join(temp_dirPath, "missing.txt"), 'a') as f:
-                        f.write(missing_text)
-                        f.write("\n")
+                    logging.error("{}: Chapter {} is missing.".format(author_path, missing_chapter))
+                    return
             else:
                 logging.error(
                     "{}: Can not find chapter item".format(author_path))

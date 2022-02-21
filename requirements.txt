@@ -7,3 +7,4 @@ pyinstaller
 filetype
 ffpb
 PyQt5
+enzyme
