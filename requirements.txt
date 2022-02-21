@@ -6,3 +6,4 @@ tqdm
 pyinstaller
 filetype
 ffpb
+PyQt5
