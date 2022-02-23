@@ -111,8 +111,6 @@ class Formatter:
                     if new_author != old_author:
                         new_author = self.renameRecur(
                             contentPath, old_author, new_author)
-                    else:
-                        new_author = old_author
 
                     # Clean item inside author folder
                     self.cleanRecur(new_author, os.path.join(
@@ -275,10 +273,10 @@ class Formatter:
                 return
 
             # Check if file exist
-            if name + ".zip" not in os.listdir(dirPath):
+            if name + ".cbz" not in os.listdir(dirPath):
                 # Move file from temp folder
                 shutil.move(os.path.join(temp_dirPath, "temp.zip"),
-                            os.path.join(dirPath, name + ".zip"))
+                            os.path.join(dirPath, name + ".cbz"))
                 return
             else:
                 with logging_redirect_tqdm():
@@ -571,11 +569,11 @@ class Formatter:
 
                 # Use correct ext
                 if zipfile.is_zipfile(os.path.join(author_path, old_fileDir)):
-                    ext = ".zip"
+                    ext = ".cbz"
                 elif rarfile.is_rarfile(os.path.join(author_path, old_fileDir)):
-                    ext = ".rar"
+                    ext = ".cbr"
                 elif tarfile.is_tarfile(os.path.join(author_path, old_fileDir)):
-                    ext = ".tar"
+                    ext = ".cbt"
 
                 new_fileDir = new_name + ext
             else:
@@ -585,8 +583,6 @@ class Formatter:
             if new_fileDir != old_fileDir:
                 new_fileDir = self.renameRecur(
                     author_path, old_fileDir, new_fileDir)
-            else:
-                new_fileDir = old_fileDir
 
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
