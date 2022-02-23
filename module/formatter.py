@@ -80,37 +80,36 @@ class Formatter:
             os.rename(os.path.join(dir_path, old_name),
                         os.path.join(dir_path, new_name))
             return new_name
-        elif new_name != old_name:
+        else:
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
             self.renameRecur(dir_path, new_name, " ".join([new_name, suffix]))
-        else:
-            return new_name
                 
     def clean(self, contentPath):
 
-        for author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+        for old_author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
             
             # Check if it is dir (author folder)
-            if os.path.isdir(os.path.join(contentPath, author)):
-                if len(os.listdir(os.path.join(contentPath, author))) == 0:
+            if os.path.isdir(os.path.join(contentPath, old_author)):
+                if len(os.listdir(os.path.join(contentPath, old_author))) == 0:
 
                     # Remove empty folder
-                    if os.path.exists(os.path.join(contentPath, author)):
-                        os.rmdir(os.path.join(contentPath, author))
+                    if os.path.exists(os.path.join(contentPath, old_author)):
+                        os.rmdir(os.path.join(contentPath, old_author))
                 else:
                     # Get cleaned author name
-                    new_author = self.cleanName(author, isAuthor=True)
+                    new_author = self.cleanName(old_author, isAuthor=True)
                     
                     # Rename
-                    new_author = self.renameRecur(contentPath, author, new_author)
+                    if new_author != old_author:
+                        new_author = self.renameRecur(contentPath, old_author, new_author)
 
                     # Clean item inside author folder
                     self.cleanRecur(new_author, os.path.join(
                         contentPath, new_author))
             else:
                 logging.error("{}: This is not AUTHOR_FOLDER.".format(
-                    os.path.join(contentPath, author)))
+                    os.path.join(contentPath, old_author)))
                 continue
 
     def sep_author_name(self, name):
@@ -134,12 +133,145 @@ class Formatter:
             # Get cleaned item name
             name_output = self.cleanName(name)
             return None, name_output
+        
+    def cleanArchiveFile(self, zipObj, filePath):
+        
+        # General info
+        filename = os.path.basename(filePath)
+        dirPath = os.path.dirname(filePath)
+        
+        # Create temp.zip
+        new_zipObj = zipfile.ZipFile(
+            os.path.join(temp_dirPath, "temp.zip"), 'w')
+        isWrite = False
+        isManhwa = False
+
+        combined_image_height = 0
+        imageList = []
+
+        for fileDirPath in natsorted(zipObj.namelist()):
+            if os.path.isdir(fileDirPath):
+                continue
+            elif fileDirPath.lower().endswith(image_ext):
+
+                # Check first image if it need to write (Save time)
+                try:
+                    image_pil = Image.open(zipObj.open(fileDirPath))
+                    image_pil = image_pil.convert('RGB')
+                    imageList.append(image_pil)
+                    w, h = image_pil.size
+                except Exception as e:
+                    logging.error("{}: {}".format(filePath, e))
+                    zipObj.close()
+                    new_zipObj.close()
+                    if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                        os.remove(os.path.join(temp_dirPath, "temp.zip"))
+                    return
+
+                zipItem_filename = os.path.basename(fileDirPath)
+                zipItem_name, ext = os.path.splitext(filename)
+
+                # Check all conditions
+                if w > 1024 and h > 1024 and h < 3*w:
+                    isWrite = True
+                elif h > 1024 and h >= 3*w:
+                    combined_image_width = w
+                    combined_image_height += h
+                    isWrite = True
+                    isManhwa = True
+                elif zipItem_filename.lower().endswith(('.jpg', '.png', '.jpeg')):
+                    isWrite = True
+                elif zipItem_filename != fileDirPath:
+                    isWrite = True
+                elif zipItem_name != "1":
+                    isWrite = True
+
+                if not isWrite:
+                    break
+
+        if isWrite and len(imageList) != 0:
+            if not isManhwa:
+                for index, image_pil in enumerate(tqdm(imageList, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
+                    image_pil.thumbnail(image_size)
+                    image_byte = io.BytesIO()
+                    image_pil.save(image_byte, "webp", quality=100)
+                    new_zipObj.writestr(
+                        str(index+1) + ".webp", image_byte.getvalue())
+            else:
+                combined_image = Image.new(
+                    'RGB', (combined_image_width, combined_image_height))
+                y_offset = 0
+                for image_pil in imageList:
+                    w, h = image_pil.size
+
+                    # Ensure that it is all images have same width
+                    if w == combined_image_width:
+                        combined_image.paste(image_pil, (0, y_offset))
+                        y_offset += h
+                    else:
+                        image_pil = image_pil.resize(
+                            (combined_image_width, int(h * (combined_image_width/w))))
+                        w, h = image_pil.size
+                        combined_image.paste(image_pil, (0, y_offset))
+                        y_offset += h
+
+                # Crop each section to specific height
+                slices = int(math.ceil(combined_image_height/image_size[1]))
+                count = 1
+                y = 0
+                crop_images = []
+                for _ in range(slices):
+                    # if we are at the end, set the lower bound to be the bottom of the image
+                    if count == slices:
+                        lower = combined_image_height
+                    else:
+                        lower = int(count * image_size[1])
+
+                    bbox = (0, y, combined_image_width, lower)
+                    crop_image = combined_image.crop(bbox)
+                    crop_images.append(crop_image)
+                    y += image_size[1]
+                    count += 1
+
+                for index, crop_image in enumerate(tqdm(crop_images, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
+                    image_byte = io.BytesIO()
+                    crop_image.save(image_byte, "webp", quality=100)
+                    new_zipObj.writestr(
+                        str(index+1) + ".webp", image_byte.getvalue())
+        elif isWrite and len(imageList) == 0:
+            logging.error(
+                "{}: Can not find image file in archieve.".format(filePath))
+            return
+
+        zipObj.close()
+        new_zipObj.close()
+
+        # Remove file -> Rename temp to file
+        if isWrite:
+            if os.path.exists(filePath):
+                # Remove old file
+                os.remove(filePath)
+            else:
+                logging.error("{}: File not exist".format(filePath))
+                return
+
+            # Check if file exist
+            if filename not in os.listdir(dirPath):
+                # Move file from temp folder
+                shutil.move(os.path.join(temp_dirPath, "temp.zip"),
+                            os.path.join(dirPath, filename))
+                return
+            else:
+                logging.error("{}: File already exist".format(
+                    os.path.join(dirPath, filename)))
+                return
+        else:
+            # Remove temp file
+            if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+                os.remove(os.path.join(temp_dirPath, "temp.zip"))
+            return
 
     def cleanFile(self, filePath):
-        
-        if not os.path.isfile(filePath):
-            logging.error("{}: Path is not file".format(filePath))
-            return
 
         filename = os.path.basename(filePath)
         name, ext = os.path.splitext(filename)
@@ -148,18 +280,21 @@ class Formatter:
         if zipfile.is_zipfile(filePath):
             try:
                 zipObj = zipfile.ZipFile(filePath, 'r')
+                self.cleanArchiveFile(zipObj, filePath)
             except Exception as e:
                 logging.error("{}: {}".format(filePath, e))
                 return
         elif rarfile.is_rarfile(filePath):
             try:
                 zipObj = rarfile.RarFile(filePath, 'r')
+                self.cleanArchiveFile(zipObj, filePath)
             except Exception as e:
                 logging.error("{}: {}".format(filePath, e))
                 return
         elif tarfile.is_tarfile(filePath):
             try:
                 zipObj = tarfile.TarFile(filePath, 'r')
+                self.cleanArchiveFile(zipObj, filePath)
             except Exception as e:
                 logging.error("{}: {}".format(filePath, e))
                 return
@@ -331,200 +466,78 @@ class Formatter:
                     filePath, kind.mime))
                 return
 
-        new_zipObj = zipfile.ZipFile(
-            os.path.join(temp_dirPath, "temp.zip"), 'w')
-        isWrite = False
-        isManhwa = False
-
-        combined_image_height = 0
-        imageList = []
-
-        for fileDirPath in natsorted(zipObj.namelist()):
-            if os.path.isdir(fileDirPath):
-                continue
-            elif fileDirPath.lower().endswith(image_ext):
-
-                # Check first image if it need to write (Save time)
-                try:
-                    image_pil = Image.open(zipObj.open(fileDirPath))
-                    image_pil = image_pil.convert('RGB')
-                    imageList.append(image_pil)
-                    w, h = image_pil.size
-                except Exception as e:
-                    logging.error("{}: {}".format(filePath, e))
-                    zipObj.close()
-                    new_zipObj.close()
-                    if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                        os.remove(os.path.join(temp_dirPath, "temp.zip"))
-                    return
-
-                zipItem_filename = os.path.basename(fileDirPath)
-                zipItem_name, ext = os.path.splitext(filename)
-
-                # Check all conditions
-                if w > 1024 and h > 1024 and h < 3*w:
-                    isWrite = True
-                elif h > 1024 and h >= 3*w:
-                    combined_image_width = w
-                    combined_image_height += h
-                    isWrite = True
-                    isManhwa = True
-                elif zipItem_filename.lower().endswith(('.jpg', '.png', '.jpeg')):
-                    isWrite = True
-                elif zipItem_filename != fileDirPath:
-                    isWrite = True
-                elif zipItem_name != "1":
-                    isWrite = True
-
-                if not isWrite:
-                    break
-
-        if isWrite and len(imageList) != 0:
-            if not isManhwa:
-                for index, image_pil in enumerate(tqdm(imageList, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
-                    image_pil.thumbnail(image_size)
-                    image_byte = io.BytesIO()
-                    image_pil.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(
-                        str(index+1) + ".webp", image_byte.getvalue())
-            else:
-                combined_image = Image.new(
-                    'RGB', (combined_image_width, combined_image_height))
-                y_offset = 0
-                for image_pil in imageList:
-                    w, h = image_pil.size
-
-                    # Ensure that it is all images have same width
-                    if w == combined_image_width:
-                        combined_image.paste(image_pil, (0, y_offset))
-                        y_offset += h
-                    else:
-                        image_pil = image_pil.resize(
-                            (combined_image_width, int(h * (combined_image_width/w))))
-                        w, h = image_pil.size
-                        combined_image.paste(image_pil, (0, y_offset))
-                        y_offset += h
-
-                # Crop each section to specific height
-                slices = int(math.ceil(combined_image_height/image_size[1]))
-                count = 1
-                y = 0
-                crop_images = []
-                for _ in range(slices):
-                    # if we are at the end, set the lower bound to be the bottom of the image
-                    if count == slices:
-                        lower = combined_image_height
-                    else:
-                        lower = int(count * image_size[1])
-
-                    bbox = (0, y, combined_image_width, lower)
-                    crop_image = combined_image.crop(bbox)
-                    crop_images.append(crop_image)
-                    y += image_size[1]
-                    count += 1
-
-                for index, crop_image in enumerate(tqdm(crop_images, leave=False, desc='Archieve Images Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')):
-                    image_byte = io.BytesIO()
-                    crop_image.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(
-                        str(index+1) + ".webp", image_byte.getvalue())
-        elif isWrite and len(imageList) == 0:
-            logging.error(
-                "{}: Can not find image file in archieve.".format(filePath))
-            return
-
-        zipObj.close()
-        new_zipObj.close()
-
-        # Remove file -> Rename temp to file
-        if isWrite:
-            if os.path.exists(filePath):
-                # Remove old file
-                os.remove(filePath)
-            else:
-                logging.error("{}: File not exist".format(filePath))
-                return
-
-            # Check if file exist
-            if filename not in os.listdir(dirPath):
-                # Move file from temp folder
-                shutil.move(os.path.join(temp_dirPath, "temp.zip"),
-                            os.path.join(dirPath, filename))
-                return
-            else:
-                logging.error("{}: File already exist".format(
-                    os.path.join(dirPath, filename)))
-                return
-        else:
-            # Remove temp file
-            if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                os.remove(os.path.join(temp_dirPath, "temp.zip"))
-            return
-
     def cleanRecur(self, author, author_path, isChapter=False):
 
         if isChapter:
-            # Progress description
-            desc = "Chapter Folder Progress"
-
+            # Check if there is only one image in folder
             # Only one image in Chapter Folder mean it is thumbnail
             imageList = [chapFile for chapFile in os.listdir(
                 author_path) if chapFile.lower().endswith(image_ext)]
             if len(os.listdir(author_path)) >= 1 and len(imageList) == 1:
+                # This folder contain thumbnail image
                 isThumbnail = True
             else:
+                # This folder does not contain thumbnail image
                 isThumbnail = False
-        else:
-            # Progress description
-            desc = "Author Folder Progress"
-
+            
+        tqdm_progress = tqdm(os.listdir(author_path), leave=False, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')
         chapters_index_list = []
-        for fileDir in tqdm(os.listdir(author_path), leave=False, desc=desc, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+        for old_fileDir in tqdm_progress:
+            
+            # tqdm Progress description
+            if isChapter:
+                tqdm_progress.set_description("Chapter Folder Progress ({})".format(old_fileDir))
+            else:
+                tqdm_progress.set_description("Author Folder Progress ({})".format(old_fileDir))
             
             # Split ext if it is file to get only filename
-            if os.path.isdir(os.path.join(author_path, fileDir)):
-                name = fileDir
-            else:
-                name = os.path.splitext(fileDir)[0]
+            name, ext = os.path.splitext(old_fileDir)
 
-            # Sep filename and author from format '[author|artist] filename.ext'
+            # Get filename from format '[author|artist] filename'
             _, new_name = self.sep_author_name(name)
             
-            # Check if it is chapter folder
-            if isChapter and os.path.isdir(author_path):
-                if fileDir.lower().endswith(image_ext) and isThumbnail:
-                    # Thumbnail in chapter folder
-                    new_name = "[" + author + "] " + "thumbnail"
+            # Filename condition
+            if isChapter and old_fileDir.lower().endswith(image_ext) and isThumbnail:
+                # Thumbnail in chapter folder
+                new_name = "[" + author + "] " + "thumbnail"
+            elif isChapter:
+                # General File in chapter folder
+                
+                # Find chapter indiate pattern
+                if re.search(r'\d{1,3}[a-z]$', new_name):
+                    # special chapter like 2a, 3b, 4c
+                    match = re.findall(r'\d{1,3}[a-z]$', new_name)
+                    
+                    # Chapter's Folder name + chapter indicator
+                    new_name = " ".join([os.path.basename(author_path), match[-1]])
+                elif re.search(r'\d{1,3}$', new_name):
+                    # normal chapter like 2, 3, 4
+                    match = re.findall(r'\d{1,3}$', new_name)
+                    
+                    # Chapter's Folder name + chapter indicator
+                    new_name = " ".join([os.path.basename(author_path), match[-1]])
+                    chapters_index_list.append(int(match[-1]))
                 else:
-                    if re.search(r'\d{1,3}[a-z]$', new_name):
-                        # special chapter like 2a, 3b, 4c
-                        match = re.findall(r'\d{1,3}[a-z]$', new_name)
-                        new_name = " ".join([os.path.basename(author_path), match[-1]])
-                    elif re.search(r'\d{1,3}$', new_name):
-                        # normal chapter like 2, 3, 4
-                        match = re.findall(r'\d{1,3}$', new_name)
-                        new_name = " ".join([os.path.basename(author_path), match[-1]])
-                        chapters_index_list.append(int(match[-1]))
-                    else:
-                        logging.error("{}: Can not find chapter indicate pattern, please check.".format(
-                            os.path.join(author_path, fileDir)))
-                        continue
+                    logging.error("{}: Can not find chapter indicate pattern, please check.".format(
+                        os.path.join(author_path, old_fileDir)))
+                    continue
             else:
+                # General File in author folder
                 # add author name to the front
                 new_name = "[" + author + "] " + new_name
             
-            if os.path.isdir(os.path.join(author_path, fileDir)):
-                new_fileDir = new_name
-            else:
-                name, ext = os.path.splitext(fileDir)
+            if ext != "":
                 new_fileDir = new_name + ext
+            else:
+                new_fileDir = new_name
 
             # Rename
-            new_fileDir = self.renameRecur(author_path, fileDir, new_fileDir)
+            if new_fileDir != old_fileDir:
+                new_fileDir = self.renameRecur(author_path, old_fileDir, new_fileDir)
 
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
-                    # Remove empty folder
+                    # Remove empty chapter's folder
                     os.rmdir(os.path.join(author_path, new_fileDir))
                 else:
                     self.cleanRecur(author, os.path.join(
