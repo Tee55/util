@@ -27,10 +27,6 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 class Formatter:
 
     def __init__(self):
-        if os.path.exists(os.path.join(temp_dirPath, "missing.txt")):
-            with open(os.path.join(temp_dirPath, "missing.txt"), "r+") as f:
-                f.truncate(0)
-
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="w")
         self.logger = logging.getLogger()
