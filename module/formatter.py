@@ -79,7 +79,9 @@ class Formatter:
         else:
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
-            self.renameRecur(dir_path, new_name, " ".join([new_name, suffix]))
+            old_name = new_name
+            new_name = " ".join([new_name, suffix])
+            self.renameRecur(dir_path, old_name, new_name)
 
     def clean(self, contentPath):
 
@@ -137,7 +139,11 @@ class Formatter:
         filename = os.path.basename(filePath)
         name, ext = os.path.splitext(filename)
         dirPath = os.path.dirname(filePath)
-
+        
+        # Remove temp.zip if exist
+        if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
+            os.remove(os.path.join(temp_dirPath, "temp.zip"))
+        
         # Create temp.zip
         new_zipObj = zipfile.ZipFile(
             os.path.join(temp_dirPath, "temp.zip"), 'w')
@@ -567,6 +573,8 @@ class Formatter:
             if new_fileDir != old_fileDir:
                 new_fileDir = self.renameRecur(
                     author_path, old_fileDir, new_fileDir)
+            else:
+                new_fileDir = old_fileDir
 
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
