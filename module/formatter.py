@@ -1,4 +1,4 @@
-from module.general import image_ext, subtitle_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
+from module.general import image_ext, subtitle_ext, video_ext, image_size, temp_dirPath
 import shutil
 from tqdm import tqdm
 import os
@@ -16,6 +16,7 @@ import filetype
 import logging
 import enzyme
 import ffpb
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -30,7 +31,6 @@ class Formatter:
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="w")
         self.logger = logging.getLogger()
-        self.logger.addHandler(TqdmLoggingHandler())
 
     def cleanName(self, name, isAuthor=False):
 
@@ -69,43 +69,45 @@ class Formatter:
         name_output = " ".join(name_output.split())
 
         return name_output
-    
+
     def renameRecur(self, dir_path, old_name, new_name):
         # Rename if not exist
         if new_name not in os.listdir(dir_path):
             os.rename(os.path.join(dir_path, old_name),
-                        os.path.join(dir_path, new_name))
+                      os.path.join(dir_path, new_name))
             return new_name
         else:
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
             self.renameRecur(dir_path, new_name, " ".join([new_name, suffix]))
-                
+
     def clean(self, contentPath):
 
         for old_author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
-            
+
             # Check if it is dir (author folder)
             if os.path.isdir(os.path.join(contentPath, old_author)):
-                
+
                 # Remove empty folder
                 if len(os.listdir(os.path.join(contentPath, old_author))) == 0:
                     os.rmdir(os.path.join(contentPath, old_author))
                 else:
                     # Get cleaned author name
                     new_author = self.cleanName(old_author, isAuthor=True)
-                    
+
                     # Rename
                     if new_author != old_author:
-                        new_author = self.renameRecur(contentPath, old_author, new_author)
+                        new_author = self.renameRecur(
+                            contentPath, old_author, new_author)
 
                     # Clean item inside author folder
                     self.cleanRecur(new_author, os.path.join(
                         contentPath, new_author))
             else:
-                logging.error("{}: This is not AUTHOR_FOLDER.".format(
-                    os.path.join(contentPath, old_author)))
-                continue
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: This is not AUTHOR_FOLDER.".format(
+                        os.path.join(contentPath, old_author)))
+                    continue
 
     def sep_author_name(self, name):
 
@@ -128,13 +130,14 @@ class Formatter:
             # Get cleaned item name
             name_output = self.cleanName(name)
             return None, name_output
-        
+
     def cleanArchiveFile(self, zipObj, filePath):
-        
+
         # General info
         filename = os.path.basename(filePath)
+        name, ext = os.path.splitext(filename)
         dirPath = os.path.dirname(filePath)
-        
+
         # Create temp.zip
         new_zipObj = zipfile.ZipFile(
             os.path.join(temp_dirPath, "temp.zip"), 'w')
@@ -156,7 +159,8 @@ class Formatter:
                     imageList.append(image_pil)
                     w, h = image_pil.size
                 except Exception as e:
-                    logging.error("{}: {}".format(filePath, e))
+                    with logging_redirect_tqdm():
+                        self.logger.error("{}: {}".format(filePath, e))
                     zipObj.close()
                     new_zipObj.close()
                     if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
@@ -234,8 +238,9 @@ class Formatter:
                     new_zipObj.writestr(
                         str(index+1) + ".webp", image_byte.getvalue())
         elif isWrite and len(imageList) == 0:
-            logging.error(
-                "{}: Can not find image file in archieve.".format(filePath))
+            with logging_redirect_tqdm():
+                self.logger.error(
+                    "{}: Can not find image file in archieve.".format(filePath))
             return
 
         zipObj.close()
@@ -247,18 +252,20 @@ class Formatter:
                 # Remove old file
                 os.remove(filePath)
             else:
-                logging.error("{}: File not exist".format(filePath))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: File not exist".format(filePath))
                 return
 
             # Check if file exist
-            if filename not in os.listdir(dirPath):
+            if name + ".zip" not in os.listdir(dirPath):
                 # Move file from temp folder
                 shutil.move(os.path.join(temp_dirPath, "temp.zip"),
-                            os.path.join(dirPath, filename))
+                            os.path.join(dirPath, name + ".zip"))
                 return
             else:
-                logging.error("{}: File already exist".format(
-                    os.path.join(dirPath, filename)))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: File already exist".format(
+                        os.path.join(dirPath, name + ".zip")))
                 return
         else:
             # Remove temp file
@@ -277,21 +284,24 @@ class Formatter:
                 zipObj = zipfile.ZipFile(filePath, 'r')
                 self.cleanArchiveFile(zipObj, filePath)
             except Exception as e:
-                logging.error("{}: {}".format(filePath, e))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: {}".format(filePath, e))
                 return
         elif rarfile.is_rarfile(filePath):
             try:
                 zipObj = rarfile.RarFile(filePath, 'r')
                 self.cleanArchiveFile(zipObj, filePath)
             except Exception as e:
-                logging.error("{}: {}".format(filePath, e))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: {}".format(filePath, e))
                 return
         elif tarfile.is_tarfile(filePath):
             try:
                 zipObj = tarfile.TarFile(filePath, 'r')
                 self.cleanArchiveFile(zipObj, filePath)
             except Exception as e:
-                logging.error("{}: {}".format(filePath, e))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: {}".format(filePath, e))
                 return
         elif filePath.lower().endswith(image_ext):
             image_pil = Image.open(filePath)
@@ -310,8 +320,9 @@ class Formatter:
                     if os.path.exists(filePath):
                         os.remove(filePath)
                 else:
-                    logging.error(
-                        "{}: There is already .webp file, please check.".format(filePath))
+                    with logging_redirect_tqdm():
+                        self.logger.error(
+                            "{}: There is already .webp file, please check.".format(filePath))
                     return
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
 
@@ -346,14 +357,14 @@ class Formatter:
             # Subtitle File
             return
         elif filePath.lower().endswith(video_ext):
-            
+
             # Remove temp.mp4 if exist
             if os.path.exists(os.path.join(temp_dirPath, "temp.mp4")):
                 os.remove(os.path.join(temp_dirPath, "temp.mp4"))
 
             # ffmpeg initial command
             command = ['-i', filePath]
-            
+
             # Subtitle file
             subFilePath = None
             for ext in subtitle_ext:
@@ -361,7 +372,7 @@ class Formatter:
                     subFilePath = os.path.join(dirPath, name + ext)
                     command.extend(['-i', subFilePath])
                     break
-            
+
             if filePath.lower().endswith('.mkv'):
                 file = open(filePath, 'rb')
                 mkv = enzyme.MKV(file)
@@ -376,7 +387,9 @@ class Formatter:
                     else:
                         command.extend(['-c:v', 'copy'])
                 else:
-                    logging.error("{}: There are more than one video track.")
+                    with logging_redirect_tqdm():
+                        self.logger.error(
+                            "{}: There are more than one video track.")
                     return
 
                 # Audio track
@@ -394,7 +407,9 @@ class Formatter:
                     if len(mkv.audio_tracks) != 0:
                         command.extend(['-map', '0:a:0', '-c:a', 'copy'])
                     else:
-                        logging.error("{}: There is no audio track.".format(filePath))
+                        with logging_redirect_tqdm():
+                            self.logger.error(
+                                "{}: There is no audio track.".format(filePath))
                         return
 
                 # Subtitle track
@@ -404,11 +419,13 @@ class Formatter:
                     for index, track in enumerate(mkv.subtitle_tracks):
                         if track.language == "jpn":
                             command.extend(['-map', '0:s:' + str(index)])
-                            
+
                             if track.codec_id == "S_TEXT/ASS":
                                 command.extend(['-c:s', 'mov_text'])
                             else:
-                                logging.error("{}: Subtitle only support ass (text-based subtitle) codec".format(filePath))
+                                with logging_redirect_tqdm():
+                                    self.logger.error(
+                                        "{}: Subtitle only support ass (text-based subtitle) codec".format(filePath))
                                 return
                             break
                     else:
@@ -417,48 +434,53 @@ class Formatter:
                             if mkv.subtitle_tracks[0].codec_id == "S_TEXT/ASS":
                                 command.extend(['-c:s', 'mov_text'])
                             else:
-                                logging.error("{}: Subtitle only support ass codec".format(filePath))
+                                with logging_redirect_tqdm():
+                                    self.logger.error(
+                                        "{}: Subtitle only support ass codec".format(filePath))
                                 return
-                
+
                 # Add metadata and output
                 command.extend(['-metadata:s:a:0', 'language=jpn',
-                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
-                
+                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
+
                 # Run command
                 ffpb.main(command, tqdm=tqdm)
-                
+
                 # Close mkv file
                 file.close()
             elif filePath.lower().endswith('.mp4') and subFilePath:
                 command.extend(['-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
-                            '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
-                
+                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
+
                 # Run command
                 ffpb.main(command, tqdm=tqdm)
-            
+
             # Remove old file if convert success
             if os.path.exists(os.path.join(temp_dirPath, "temp.mp4")):
-                
+
                 # Remove old file
                 if os.path.exists(filePath):
                     os.remove(filePath)
-                
+
                 # Remove subtitle file
                 if subFilePath and os.path.exists(subFilePath):
                     os.remove(subFilePath)
 
                 shutil.move(os.path.join(temp_dirPath, "temp.mp4"),
                             os.path.join(dirPath, name + ".mp4"))
-                
+
             return
         else:
             kind = filetype.guess(filePath)
             if kind is None:
-                logging.error("{}: File format unknown.".format(filePath))
+                with logging_redirect_tqdm():
+                    self.logger.error(
+                        "{}: File format unknown.".format(filePath))
                 return
             else:
-                logging.error("{}: We do not support {}.".format(
-                    filePath, kind.mime))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: We do not support {}.".format(
+                        filePath, kind.mime))
                 return
 
     def cleanRecur(self, author, author_path, isChapter=False):
@@ -474,61 +496,77 @@ class Formatter:
             else:
                 # This folder does not contain thumbnail image
                 isThumbnail = False
-            
-        tqdm_progress = tqdm(os.listdir(author_path), leave=False, bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')
+
+        tqdm_progress = tqdm(os.listdir(author_path), leave=False,
+                             bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}')
         chapters_index_list = []
         for old_fileDir in tqdm_progress:
-            
+
             # tqdm Progress description
             if isChapter:
-                tqdm_progress.set_description("Chapter Folder Progress ({})".format(old_fileDir))
+                tqdm_progress.set_description(
+                    "Chapter Folder Progress ({})".format(old_fileDir))
             else:
-                tqdm_progress.set_description("Author Folder Progress ({})".format(old_fileDir))
-            
+                tqdm_progress.set_description(
+                    "Author Folder Progress ({})".format(old_fileDir))
+
             # Split ext if it is file to get only filename
             name, ext = os.path.splitext(old_fileDir)
 
             # Get filename from format '[author|artist] filename'
             _, new_name = self.sep_author_name(name)
-            
+
             # Filename condition
             if isChapter and old_fileDir.lower().endswith(image_ext) and isThumbnail:
                 # Thumbnail in chapter folder
                 new_name = "[" + author + "] " + "thumbnail"
             elif isChapter:
                 # General File in chapter folder
-                
+
                 # Find chapter indiate pattern
                 if re.search(r'\d{1,3}[a-z]$', new_name):
                     # special chapter like 2a, 3b, 4c
                     match = re.findall(r'\d{1,3}[a-z]$', new_name)
-                    
+
                     # Chapter's Folder name + chapter indicator
-                    new_name = " ".join([os.path.basename(author_path), match[-1]])
+                    new_name = " ".join(
+                        [os.path.basename(author_path), match[-1]])
                 elif re.search(r'\d{1,3}$', new_name):
                     # normal chapter like 2, 3, 4
                     match = re.findall(r'\d{1,3}$', new_name)
-                    
+
                     # Chapter's Folder name + chapter indicator
-                    new_name = " ".join([os.path.basename(author_path), match[-1]])
+                    new_name = " ".join(
+                        [os.path.basename(author_path), match[-1]])
                     chapters_index_list.append(int(match[-1]))
                 else:
-                    logging.error("{}: Can not find chapter indicate pattern, please check.".format(
-                        os.path.join(author_path, old_fileDir)))
+                    with logging_redirect_tqdm():
+                        self.logger.error("{}: Can not find chapter indicate pattern, please check.".format(
+                            os.path.join(author_path, old_fileDir)))
                     continue
             else:
                 # General File in author folder
                 # add author name to the front
                 new_name = "[" + author + "] " + new_name
-            
+
             if ext != "":
+
+                # Use correct ext
+                if zipfile.is_zipfile(os.path.join(author_path, old_fileDir)):
+                    ext = ".zip"
+                elif rarfile.is_rarfile(os.path.join(author_path, old_fileDir)):
+                    ext = ".rar"
+                elif tarfile.is_tarfile(os.path.join(author_path, old_fileDir)):
+                    ext = ".tar"
+
                 new_fileDir = new_name + ext
             else:
                 new_fileDir = new_name
 
             # Rename
             if new_fileDir != old_fileDir:
-                new_fileDir = self.renameRecur(author_path, old_fileDir, new_fileDir)
+                new_fileDir = self.renameRecur(
+                    author_path, old_fileDir, new_fileDir)
 
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
@@ -549,9 +587,12 @@ class Formatter:
                         missing_chapter.append(index)
 
                 if len(missing_chapter) != 0:
-                    logging.error("{}: Chapter {} is missing.".format(author_path, missing_chapter))
+                    with logging_redirect_tqdm():
+                        self.logger.error("{}: Chapter {} is missing.".format(
+                            author_path, missing_chapter))
                     return
             else:
-                logging.error(
-                    "{}: Can not find chapter item".format(author_path))
+                with logging_redirect_tqdm():
+                    self.logger.error(
+                        "{}: Can not find chapter item".format(author_path))
                 return

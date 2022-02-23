@@ -5,14 +5,14 @@ import filetype
 from module.formatter import Formatter
 import logging
 from tqdm import tqdm
-from module.general import zip_ext, image_ext, temp_dirPath, TqdmLoggingHandler
+from module.general import zip_ext, image_ext, temp_dirPath
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 class Compressor:
 
     def __init__(self):
         logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
         self.logger = logging.getLogger()
-        self.logger.addHandler(TqdmLoggingHandler())
         self.formatter = Formatter()
     
     def run(self, srcPath):
@@ -84,13 +84,16 @@ class Compressor:
                         if len(os.listdir(dirPath)) == 0:
                             os.rmdir(dirPath)
                     else:
-                        logging.error("{}: File already exist, please check.".format(filePath))
+                        with logging_redirect_tqdm():
+                            self.logger.error("{}: File already exist, please check.".format(filePath))
                         continue
                 else:
                     kind = filetype.guess(filePath)
                     if kind is None:
-                        logging.error("{}: File format unknown.".format(filePath))
+                        with logging_redirect_tqdm():
+                            self.logger.error("{}: File format unknown.".format(filePath))
                         return
                     else:
-                        logging.error("{}: We do not support {}.".format(filePath, kind.mime))
+                        with logging_redirect_tqdm():
+                            self.logger.error("{}: We do not support {}.".format(filePath, kind.mime))
                         return

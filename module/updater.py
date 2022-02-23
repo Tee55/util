@@ -5,7 +5,8 @@ import time
 import datetime
 from tqdm import tqdm
 import logging
-from module.general import temp_dirPath, TqdmLoggingHandler
+from tqdm.contrib.logging import logging_redirect_tqdm
+from module.general import temp_dirPath
 
 formatter = Formatter()
 
@@ -14,7 +15,6 @@ class Updater:
     def __init__(self):
         logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
         self.logger = logging.getLogger()
-        self.logger.addHandler(TqdmLoggingHandler())
         self.formatter = Formatter()
 
     def get_all_files_authors(self, fullPath):
@@ -59,7 +59,8 @@ class Updater:
                         os.rename(os.path.join(root, filename),
                                 os.path.join(root, new_filename))
                     else:
-                        logging.error("{}: Problem with renaming file, please check.".format(os.path.join(root, filename)))
+                        with logging_redirect_tqdm():
+                            self.logger.error("{}: Problem with renaming file, please check.".format(os.path.join(root, filename)))
                         continue
 
                 source_filelist.append(os.path.join(root, new_filename))
@@ -87,5 +88,6 @@ class Updater:
                 # Move file
                 shutil.move(fullPath, movePath)
             else:
-                logging.error("{}: File already exist, please check.".format(fullPath))
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: File already exist, please check.".format(fullPath))
                 continue
