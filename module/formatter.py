@@ -101,6 +101,8 @@ class Formatter:
                     if new_author != old_author:
                         new_author = self.renameRecur(
                             contentPath, old_author, new_author)
+                    else:
+                        new_author = old_author
 
                     # Clean item inside author folder
                     self.cleanRecur(new_author, os.path.join(
