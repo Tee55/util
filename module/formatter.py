@@ -87,11 +87,10 @@ class Formatter:
             
             # Check if it is dir (author folder)
             if os.path.isdir(os.path.join(contentPath, old_author)):
+                
+                # Remove empty folder
                 if len(os.listdir(os.path.join(contentPath, old_author))) == 0:
-
-                    # Remove empty folder
-                    if os.path.exists(os.path.join(contentPath, old_author)):
-                        os.rmdir(os.path.join(contentPath, old_author))
+                    os.rmdir(os.path.join(contentPath, old_author))
                 else:
                     # Get cleaned author name
                     new_author = self.cleanName(old_author, isAuthor=True)
