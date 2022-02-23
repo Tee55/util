@@ -70,18 +70,28 @@ class Formatter:
 
         return name_output
 
-    def renameRecur(self, dir_path, old_name, new_name):
+    def renameRecur(self, dir_path, old_fileDir, new_fileDir):
+        new_name, ext = os.path.splitext(new_fileDir)
+        
         # Rename if not exist
-        if new_name not in os.listdir(dir_path):
-            os.rename(os.path.join(dir_path, old_name),
-                      os.path.join(dir_path, new_name))
-            return new_name
+        if new_fileDir not in os.listdir(dir_path):
+            os.rename(os.path.join(dir_path, old_fileDir),
+                      os.path.join(dir_path, new_fileDir))
+            return new_fileDir
         else:
             suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
             time.sleep(1)
             old_name = new_name
             new_name = " ".join([new_name, suffix])
-            self.renameRecur(dir_path, old_name, new_name)
+            
+            if ext != "":
+                old_fileDir = old_name + ext
+                new_fileDir = new_name + ext
+            else:
+                old_fileDir = old_name
+                new_fileDir = new_name
+            
+            return self.renameRecur(dir_path, old_fileDir, new_fileDir)
 
     def clean(self, contentPath):
 
