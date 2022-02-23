@@ -1,4 +1,4 @@
-from module.general import image_ext, subtitle_ext, image_size, temp_dirPath, TqdmLoggingHandler, video_ext
+from module.general import image_ext, subtitle_ext, video_ext, image_size, temp_dirPath, TqdmLoggingHandler
 import shutil
 from tqdm import tqdm
 import os
@@ -73,10 +73,25 @@ class Formatter:
         name_output = " ".join(name_output.split())
 
         return name_output
-
+    
+    def renameRecur(self, dir_path, old_name, new_name):
+        # Rename if not exist
+        if new_name not in os.listdir(dir_path):
+            os.rename(os.path.join(dir_path, old_name),
+                        os.path.join(dir_path, new_name))
+            return new_name
+        elif new_name != old_name:
+            suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+            time.sleep(1)
+            self.renameRecur(dir_path, new_name, " ".join([new_name, suffix]))
+        else:
+            return new_name
+                
     def clean(self, contentPath):
 
         for author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+            
+            # Check if it is dir (author folder)
             if os.path.isdir(os.path.join(contentPath, author)):
                 if len(os.listdir(os.path.join(contentPath, author))) == 0:
 
@@ -86,24 +101,11 @@ class Formatter:
                 else:
                     # Get cleaned author name
                     new_author = self.cleanName(author, isAuthor=True)
+                    
+                    # Rename
+                    new_author = self.renameRecur(contentPath, author, new_author)
 
-                    # Rename author folder
-                    if new_author not in os.listdir(contentPath):
-                        os.rename(os.path.join(contentPath, author),
-                                  os.path.join(contentPath, new_author))
-                    elif new_author != author:
-                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                        time.sleep(1)
-                        new_author = " ".join([new_author, suffix])
-                        if new_author not in os.listdir(contentPath):
-                            os.rename(os.path.join(contentPath, author),
-                                      os.path.join(contentPath, new_author))
-                        else:
-                            logging.error("{}: Problem with renaming file, please check.".format(
-                                os.path.join(contentPath, author)))
-                            continue
-
-                    # Renaming author items
+                    # Clean item inside author folder
                     self.cleanRecur(new_author, os.path.join(
                         contentPath, new_author))
             else:
@@ -517,26 +519,8 @@ class Formatter:
                 name, ext = os.path.splitext(fileDir)
                 new_fileDir = new_name + ext
 
-            # Rename fileDir
-            if new_fileDir not in os.listdir(author_path):
-                os.rename(os.path.join(author_path, fileDir),
-                        os.path.join(author_path, new_fileDir))
-            elif new_name != name:
-                suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-                time.sleep(1)
-                new_name = " ".join([new_name, suffix])
-                if os.path.isfile(os.path.join(author_path, fileDir)):
-                    name, ext = os.path.splitext(fileDir)
-                    new_fileDir = new_name + ext
-                else:
-                    new_fileDir = new_name
-                if new_fileDir not in os.listdir(author_path):
-                    os.rename(os.path.join(author_path, fileDir),
-                              os.path.join(author_path, new_fileDir))
-                else:
-                    logging.error("{}: Problem with renaming file, please check.".format(
-                        os.path.join(author_path, fileDir)))
-                    continue
+            # Rename
+            new_fileDir = self.renameRecur(author_path, fileDir, new_fileDir)
 
             if os.path.isdir(os.path.join(author_path, new_fileDir)):
                 if len(os.listdir(os.path.join(author_path, new_fileDir))) == 0:
