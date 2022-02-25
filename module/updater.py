@@ -13,7 +13,7 @@ formatter = Formatter()
 class Updater:
 
     def __init__(self):
-        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
+        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "a")
         self.logger = logging.getLogger()
         self.formatter = Formatter()
 

@@ -29,7 +29,7 @@ class Formatter:
 
     def __init__(self):
         logging.basicConfig(filename=os.path.join(
-            temp_dirPath, "error.log"), filemode="w")
+            temp_dirPath, "error.log"), filemode="a")
         self.logger = logging.getLogger()
         self.session_datetime = datetime.datetime.now().strftime("%y%m%d %H%M%S")
         

@@ -11,7 +11,7 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 class Compressor:
 
     def __init__(self):
-        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "w")
+        logging.basicConfig(filename=os.path.join(temp_dirPath, "error.log"), filemode = "a")
         self.logger = logging.getLogger()
         self.formatter = Formatter()
     
