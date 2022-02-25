@@ -530,10 +530,10 @@ class Formatter:
             # tqdm Progress description
             if isChapter:
                 tqdm_progress.set_description(
-                    "Chapter Folder Progress ({%.20s})".format(old_fileDir))
+                    "Chapter Folder Progress ({:10})".format(old_fileDir))
             else:
                 tqdm_progress.set_description(
-                    "Author Folder Progress ({%.20s})".format(old_fileDir))
+                    "Author Folder Progress ({:10})".format(old_fileDir))
 
             # Split ext if it is file to get only filename
             name, ext = os.path.splitext(old_fileDir)
