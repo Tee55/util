@@ -165,7 +165,7 @@ class Formatter:
 
         for fileDirPath in natsorted(zipObj.namelist()):
             if os.path.isdir(fileDirPath):
-                continue
+                pass
             elif fileDirPath.lower().endswith(image_ext):
 
                 # Check first image if it need to write (Save time)
