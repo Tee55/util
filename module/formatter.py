@@ -28,6 +28,10 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 class Formatter:
 
     def __init__(self):
+        # Truncate the log file
+        with open(os.path.join(temp_dirPath, "error.log"), 'w'):
+            pass
+        
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="a")
         self.logger = logging.getLogger()
