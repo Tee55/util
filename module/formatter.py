@@ -173,7 +173,7 @@ class Formatter:
         imageList = []
 
         for fileDirPath in natsorted(zipObj.namelist()):
-            if os.path.isdir(fileDirPath):
+            if fileDirPath.lower().endswith("/"):
                 pass
             elif fileDirPath.lower().endswith(image_ext):
 
