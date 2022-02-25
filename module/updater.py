@@ -81,7 +81,7 @@ class Updater:
         # Get only name (not include ext)
         target_namelist = [os.path.splitext(os.path.basename(fullPath))[0] for fullPath in target_filelist]
 
-        for fullPath, author in tqdm(zip(source_filelist, source_authorList), desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+        for fullPath, author in tqdm(zip(source_filelist, source_authorList), desc='Main Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}'):
             filename = os.path.basename(fullPath)
             name = os.path.splitext(filename)[0]
             movePath = os.path.join(targetPath, author, filename)

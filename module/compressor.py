@@ -25,7 +25,7 @@ class Compressor:
         for root, dirs, files in os.walk(srcPath):
             
             # Loop all files in SOURCE_FOLDER
-            for file in tqdm(files, desc='Main Progress', bar_format='{l_bar}{bar:10}| {n_fmt}/{total_fmt}'):
+            for file in tqdm(files, desc='Main Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}'):
                 filePath = os.path.join(root, file)
                 filename = os.path.basename(filePath)
                 dirPath = os.path.dirname(filePath)
