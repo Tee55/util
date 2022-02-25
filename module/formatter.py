@@ -31,6 +31,10 @@ class Formatter:
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="w")
         self.logger = logging.getLogger()
+        self.session_datetime = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+        
+        if not os.path.exists(temp_dirPath):
+            os.mkdir(temp_dirPath)
 
     def cleanName(self, name, isAuthor=False):
 
@@ -151,12 +155,12 @@ class Formatter:
         dirPath = os.path.dirname(filePath)
         
         # Remove temp.zip if exist
-        if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-            os.remove(os.path.join(temp_dirPath, "temp.zip"))
+        if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
+            os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
         
         # Create temp.zip
         new_zipObj = zipfile.ZipFile(
-            os.path.join(temp_dirPath, "temp.zip"), 'w')
+            os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)), 'w')
         isWrite = False
         isManhwa = False
 
@@ -179,8 +183,8 @@ class Formatter:
                         self.logger.error("{}: {}".format(filePath, e))
                     zipObj.close()
                     new_zipObj.close()
-                    if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                        os.remove(os.path.join(temp_dirPath, "temp.zip"))
+                    if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
+                        os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
                     return
 
                 zipItem_filename = os.path.basename(fileDirPath)
@@ -275,7 +279,7 @@ class Formatter:
             # Check if file exist
             if name + ".cbz" not in os.listdir(dirPath):
                 # Move file from temp folder
-                shutil.move(os.path.join(temp_dirPath, "temp.zip"),
+                shutil.move(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)),
                             os.path.join(dirPath, name + ".cbz"))
                 return
             else:
@@ -285,8 +289,8 @@ class Formatter:
                 return
         else:
             # Remove temp file
-            if os.path.exists(os.path.join(temp_dirPath, "temp.zip")):
-                os.remove(os.path.join(temp_dirPath, "temp.zip"))
+            if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
+                os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
             return
 
     def cleanFile(self, filePath):
@@ -375,8 +379,8 @@ class Formatter:
         elif filePath.lower().endswith(video_ext):
 
             # Remove temp.mp4 if exist
-            if os.path.exists(os.path.join(temp_dirPath, "temp.mp4")):
-                os.remove(os.path.join(temp_dirPath, "temp.mp4"))
+            if os.path.exists(os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime))):
+                os.remove(os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime)))
 
             # ffmpeg initial command
             command = ['-i', filePath]
@@ -457,7 +461,7 @@ class Formatter:
 
                 # Add metadata and output
                 command.extend(['-metadata:s:a:0', 'language=jpn',
-                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
+                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime))])
 
                 # Run command
                 ffpb.main(command, tqdm=tqdm)
@@ -466,13 +470,13 @@ class Formatter:
                 file.close()
             elif filePath.lower().endswith('.mp4') and subFilePath:
                 command.extend(['-map', '0:v', '-c:v', 'copy', '-map', '0:a', '-c:a', 'copy', '-map', '1:s:0', '-c:s', 'mov_text', '-metadata:s:a:0', 'language=jpn',
-                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp.mp4")])
+                                '-metadata:s:s:0', 'language=eng', os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime))])
 
                 # Run command
                 ffpb.main(command, tqdm=tqdm)
 
             # Remove old file if convert success
-            if os.path.exists(os.path.join(temp_dirPath, "temp.mp4")):
+            if os.path.exists(os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime))):
 
                 # Remove old file
                 if os.path.exists(filePath):
@@ -482,7 +486,7 @@ class Formatter:
                 if subFilePath and os.path.exists(subFilePath):
                     os.remove(subFilePath)
 
-                shutil.move(os.path.join(temp_dirPath, "temp.mp4"),
+                shutil.move(os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime)),
                             os.path.join(dirPath, name + ".mp4"))
 
             return
