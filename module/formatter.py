@@ -193,6 +193,11 @@ class Formatter:
                     return
 
                 zipItem_filename = os.path.basename(fileDirPath)
+                
+                # Skip somefile
+                if zipItem_filename == "asiantolick_com_banner.png":
+                    continue
+                
                 zipItem_name, ext = os.path.splitext(filename)
 
                 # Check all conditions
