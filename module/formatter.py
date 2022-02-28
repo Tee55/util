@@ -525,7 +525,7 @@ class Formatter:
                 # This folder does not contain thumbnail image
                 isThumbnail = False
 
-        tqdm_progress = tqdm(os.listdir(author_path), leave=False,
+        tqdm_progress = tqdm(natsorted(os.listdir(author_path)), leave=False,
                              bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')
         chapters_index_list = []
         for old_fileDir in tqdm_progress:
