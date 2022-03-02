@@ -47,7 +47,7 @@ class Formatter:
         name = name.strip()
 
         # Slugify
-        name_output = slugify(name, separator=" ")
+        name_output = slugify(name, separator=" ", allow_unicode=True)
 
         # Append datetime if string after slugnify is empty
         if name_output == "":
@@ -102,7 +102,7 @@ class Formatter:
 
     def clean(self, contentPath):
 
-        for old_author in tqdm(os.listdir(contentPath), desc='Content Folder Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}'):
+        for old_author in tqdm(natsorted(os.listdir(contentPath)), desc='Content Folder Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}'):
 
             # Check if it is dir (author folder)
             if os.path.isdir(os.path.join(contentPath, old_author)):
@@ -521,14 +521,19 @@ class Formatter:
             if len(os.listdir(author_path)) >= 1 and len(imageList) == 1:
                 # This folder contain thumbnail image
                 isThumbnail = True
+                isImageFolder = False
+            elif len(imageList) == len(os.listdir(author_path)):
+                isThumbnail = False
+                isImageFolder = True
             else:
                 # This folder does not contain thumbnail image
                 isThumbnail = False
+                isImageFolder = False
 
         tqdm_progress = tqdm(natsorted(os.listdir(author_path)), leave=False,
                              bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')
         chapters_index_list = []
-        for old_fileDir in tqdm_progress:
+        for index, old_fileDir in enumerate(tqdm_progress):
 
             # tqdm Progress description
             if isChapter:
@@ -548,6 +553,9 @@ class Formatter:
             if isChapter and old_fileDir.lower().endswith(image_ext) and isThumbnail:
                 # Thumbnail in chapter folder
                 new_name = "[" + author + "] " + "thumbnail"
+            elif isChapter and isImageFolder:
+                # Image Folder item rename
+                 new_name = " ".join([os.path.basename(author_path), str(index+1)])
             elif isChapter:
                 # General File in chapter folder
 
@@ -607,7 +615,7 @@ class Formatter:
                 self.cleanFile(os.path.join(author_path, new_fileDir))
 
         # Check if all chapter complete (Not include special chapter)
-        if isChapter:
+        if isChapter and not isImageFolder:
             if len(chapters_index_list) != 0:
                 missing_chapter = []
                 for index in range(1, natsorted(chapters_index_list)[-1]+1):
