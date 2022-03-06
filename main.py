@@ -55,8 +55,19 @@ if __name__ == '__main__':
                 print("{}: This is not content folder.".format(sourcePath))
         elif args.type == "author":
             if os.path.basename(sourcePath) not in ["r18", "norm"]:
-                author = os.path.basename(sourcePath)
-                formatter.cleanRecur(author, sourcePath, isChapter=False)
+                old_author = os.path.basename(sourcePath)
+                contentPath = os.path.dirname(sourcePath)
+                
+                # Get cleaned author name
+                new_author = formatter.cleanName(old_author, isAuthor=True)
+
+                # Rename
+                if new_author != old_author:
+                    new_author = formatter.renameRecur(
+                        contentPath, old_author, new_author)
+                
+                formatter.cleanRecur(new_author, os.path.join(
+                        contentPath, new_author), isChapter=False)
         elif args.type == "category":
             for content_folder in os.listdir(sourcePath):
                 if content_folder in ["r18", "norm"]:
