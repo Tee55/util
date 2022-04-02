@@ -292,26 +292,19 @@ class Formatter:
             zipObj.close()
             new_zipObj.close()
 
-            # Check if file exist
-            if name + ".cbz" not in os.listdir(dirPath):
-
-                # Remove original file
-                if os.path.exists(filePath):
-                    # Remove old file
-                    os.remove(filePath)
-                else:
-                    with logging_redirect_tqdm():
-                        self.logger.error("{}: Cannot remove the file, file not exist".format(filePath))
-                    return
-
-                # Move file from temp folder
-                shutil.move(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)),
-                            os.path.join(dirPath, name + ".cbz"))
-                return
+            # Remove original file
+            if os.path.exists(filePath):
+                # Remove old file
+                os.remove(filePath)
             else:
                 with logging_redirect_tqdm():
-                    self.logger.error("{}: CBZ File already exist".format(filePath))
+                    self.logger.error("{}: Cannot remove the file, file not exist".format(filePath))
                 return
+
+            # Move file from temp folder
+            shutil.move(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)),
+                        os.path.join(dirPath, name + ".cbz"))
+            return
         else:
             # Close archieve
             zipObj.close()
