@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from module.compressor import Compressor
 from module.formatter import Formatter
 from module.updater import Updater
 import os
@@ -14,8 +13,8 @@ ctypes.windll.shcore.SetProcessDpiAwareness(1)
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument(
-        '-m', '-module', '--module', default="formatter", choices=['compressor', 'formatter', 'updater'],
-        help='Choose Module you want to run (compressor, formatter, updater)'
+        '-m', '-module', '--module', default="formatter", choices=['formatter', 'updater'],
+        help='Choose Module you want to run (formatter, updater)'
     )
     parser.add_argument(
         '-t', '-type', '--type', default="content", choices=['author', 'content', "category", "collection"],
@@ -23,22 +22,7 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
     
-    
-    if args.module == "compressor":
-        
-        root = tk.Tk()
-        root.call('tk', 'scaling', 4.0)
-        sourcePath = filedialog.askdirectory()
-        print("Select source dir path: {}".format(sourcePath))
-        root.destroy()
-        
-        if os.path.basename(sourcePath) in ["r18", "norm"]:
-            compressor = Compressor()
-            compressor.run(sourcePath)
-        else:
-            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(sourcePath))
-            
-    elif args.module == "formatter":
+    if args.module == "formatter":
         
         root = tk.Tk()
         root.call('tk', 'scaling', 4.0)

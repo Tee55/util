@@ -28,16 +28,16 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 class Formatter:
 
     def __init__(self):
-        
+
         # Truncate the log file
         with open(os.path.join(temp_dirPath, "error.log"), 'w'):
             pass
-        
+
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="a")
         self.logger = logging.getLogger()
         self.session_datetime = datetime.datetime.now().strftime("%y%m%d %H%M%S")
-        
+
         if not os.path.exists(temp_dirPath):
             os.mkdir(temp_dirPath)
         else:
@@ -90,18 +90,18 @@ class Formatter:
             # Rename if not exist
             if new_fileDir not in os.listdir(dir_path):
                 os.rename(os.path.join(dir_path, old_fileDir),
-                        os.path.join(dir_path, new_fileDir))
+                          os.path.join(dir_path, new_fileDir))
                 break
             else:
                 suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
                 time.sleep(1)
                 new_name = " ".join([new_name, suffix])
-                
+
                 if ext != "":
                     new_fileDir = new_name + ext
                 else:
                     new_fileDir = new_name
-            
+
         return new_fileDir
 
     def clean(self, contentPath):
@@ -162,10 +162,11 @@ class Formatter:
         filename = os.path.basename(filePath)
         name, ext = os.path.splitext(filename)
         dirPath = os.path.dirname(filePath)
-        
+
         # Remove temp.zip if exist
         if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
-            os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
+            os.remove(os.path.join(temp_dirPath,
+                      "temp {}.zip".format(self.session_datetime)))
 
         isWrite = False
         isManhwa = False
@@ -187,7 +188,7 @@ class Formatter:
                         self.logger.error("{}: {}".format(filePath, e))
                     return
 
-                zipItem_filename = os.path.basename(fileDirPath)           
+                zipItem_filename = os.path.basename(fileDirPath)
                 zipItem_name, ext = os.path.splitext(zipItem_filename)
 
                 # Check all conditions
@@ -207,11 +208,12 @@ class Formatter:
 
                 if isWrite or image_count >= image_check:
                     break
-                
+
         if isWrite:
 
             # Create temp.zip
-            new_zipObj = zipfile.ZipFile(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)), 'w')
+            new_zipObj = zipfile.ZipFile(os.path.join(
+                temp_dirPath, "temp {}.zip".format(self.session_datetime)), 'w')
 
             # Get all image file in archieve
             imageList = []
@@ -227,7 +229,8 @@ class Formatter:
                         new_zipObj.close()
 
                         if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
-                            os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
+                            os.remove(os.path.join(
+                                temp_dirPath, "temp {}.zip".format(self.session_datetime)))
 
                         with logging_redirect_tqdm():
                             self.logger.error("{}: {}".format(filePath, e))
@@ -255,7 +258,8 @@ class Formatter:
                             y_offset += h
 
                     # Crop each section to specific height
-                    slices = int(math.ceil(combined_image_height/image_size[1]))
+                    slices = int(
+                        math.ceil(combined_image_height/image_size[1]))
                     count = 1
                     y = 0
                     crop_images = []
@@ -300,7 +304,8 @@ class Formatter:
                 os.remove(filePath)
             else:
                 with logging_redirect_tqdm():
-                    self.logger.error("{}: Cannot remove the file, file not exist".format(filePath))
+                    self.logger.error(
+                        "{}: Cannot remove the file, file not exist".format(filePath))
                 return
 
             # Move file from temp folder
@@ -310,7 +315,7 @@ class Formatter:
         else:
             # Close archieve
             zipObj.close()
-            
+
             return
 
     def cleanFile(self, filePath):
@@ -400,7 +405,8 @@ class Formatter:
 
             # Remove temp.mp4 if exist
             if os.path.exists(os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime))):
-                os.remove(os.path.join(temp_dirPath, "temp {}.mp4".format(self.session_datetime)))
+                os.remove(os.path.join(temp_dirPath,
+                          "temp {}.mp4".format(self.session_datetime)))
 
             # ffmpeg initial command
             command = ['-i', filePath]
@@ -567,7 +573,8 @@ class Formatter:
                 new_name = "[" + author + "] " + "thumbnail"
             elif isChapter and isImageFolder:
                 # Image Folder item rename
-                 new_name = " ".join([os.path.basename(author_path), str(index+1)])
+                new_name = " ".join(
+                    [os.path.basename(author_path), str(index+1)])
             elif isChapter:
                 # General File in chapter folder
 
