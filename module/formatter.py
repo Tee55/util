@@ -40,6 +40,10 @@ class Formatter:
         
         if not os.path.exists(temp_dirPath):
             os.mkdir(temp_dirPath)
+        else:
+            for filename in os.listdir(temp_dirPath):
+                if os.path.isfile(os.path.join(temp_dirPath, filename)) and filename.startswith('temp'):
+                    os.remove(os.path.join(temp_dirPath, filename))
 
     def cleanName(self, name, isAuthor=False):
 
@@ -150,7 +154,7 @@ class Formatter:
             name_output = self.cleanName(name)
             return None, name_output
 
-    def cleanArchiveFile(self, zipObj, filePath):
+    def cleanArchiveFile(self, zipObj, filePath, image_check=3):
 
         # General info
         filename = os.path.basename(filePath)
@@ -160,43 +164,29 @@ class Formatter:
         # Remove temp.zip if exist
         if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
             os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
-        
-        # Create temp.zip
-        new_zipObj = zipfile.ZipFile(
-            os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)), 'w')
+
         isWrite = False
         isManhwa = False
-
         combined_image_height = 0
-        imageList = []
-
+        image_count = 0
         for fileDirPath in natsorted(zipObj.namelist()):
-            if fileDirPath.lower().endswith("/"):
-                pass
-            elif fileDirPath.lower().endswith(image_ext):
-
-                # Check first image if it need to write (Save time)
+            if fileDirPath.lower().endswith(image_ext):
+                # Check images if it need to write (Save time)
                 try:
                     image_pil = Image.open(zipObj.open(fileDirPath))
                     image_pil = image_pil.convert('RGB')
-                    imageList.append(image_pil)
                     w, h = image_pil.size
+                    image_count += 1
                 except Exception as e:
+                    # Close archieve file
+                    zipObj.close()
+
                     with logging_redirect_tqdm():
                         self.logger.error("{}: {}".format(filePath, e))
-                    zipObj.close()
-                    new_zipObj.close()
-                    if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
-                        os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
                     return
 
-                zipItem_filename = os.path.basename(fileDirPath)
-                
-                # Skip somefile
-                if zipItem_filename == "asiantolick_com_banner.png":
-                    continue
-                
-                zipItem_name, ext = os.path.splitext(filename)
+                zipItem_filename = os.path.basename(fileDirPath)           
+                zipItem_name, ext = os.path.splitext(zipItem_filename)
 
                 # Check all conditions
                 if w > 1024 and h > 1024 and h < 3*w:
@@ -210,94 +200,122 @@ class Formatter:
                     isWrite = True
                 elif zipItem_filename != fileDirPath:
                     isWrite = True
-                elif zipItem_name != "1":
+                elif zipItem_name != str(image_count):
                     isWrite = True
 
-                break
-
-        if isWrite and len(imageList) != 0:
-            if not isManhwa:
-                for index, image_pil in enumerate(tqdm(imageList, leave=False, desc='Archieve Images Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')):
-                    image_pil.thumbnail(image_size)
-                    image_byte = io.BytesIO()
-                    image_pil.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(
-                        str(index+1) + ".webp", image_byte.getvalue())
-            else:
-                combined_image = Image.new(
-                    'RGB', (combined_image_width, combined_image_height))
-                y_offset = 0
-                for image_pil in imageList:
-                    w, h = image_pil.size
-
-                    # Ensure that it is all images have same width
-                    if w == combined_image_width:
-                        combined_image.paste(image_pil, (0, y_offset))
-                        y_offset += h
-                    else:
-                        image_pil = image_pil.resize(
-                            (combined_image_width, int(h * (combined_image_width/w))))
-                        w, h = image_pil.size
-                        combined_image.paste(image_pil, (0, y_offset))
-                        y_offset += h
-
-                # Crop each section to specific height
-                slices = int(math.ceil(combined_image_height/image_size[1]))
-                count = 1
-                y = 0
-                crop_images = []
-                for _ in range(slices):
-                    # if we are at the end, set the lower bound to be the bottom of the image
-                    if count == slices:
-                        lower = combined_image_height
-                    else:
-                        lower = int(count * image_size[1])
-
-                    bbox = (0, y, combined_image_width, lower)
-                    crop_image = combined_image.crop(bbox)
-                    crop_images.append(crop_image)
-                    y += image_size[1]
-                    count += 1
-
-                for index, crop_image in enumerate(tqdm(crop_images, leave=False, desc='Archieve Images Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')):
-                    image_byte = io.BytesIO()
-                    crop_image.save(image_byte, "webp", quality=100)
-                    new_zipObj.writestr(
-                        str(index+1) + ".webp", image_byte.getvalue())
-        elif isWrite and len(imageList) == 0:
-            with logging_redirect_tqdm():
-                self.logger.error(
-                    "{}: Can not find image file in archieve.".format(filePath))
-            return
-
-        zipObj.close()
-        new_zipObj.close()
-
-        # Remove file -> Rename temp to file
+                if isWrite or image_count >= image_check:
+                    break
+                
         if isWrite:
-            if os.path.exists(filePath):
-                # Remove old file
-                os.remove(filePath)
+
+            # Create temp.zip
+            new_zipObj = zipfile.ZipFile(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)), 'w')
+
+            # Get all image file in archieve
+            imageList = []
+            for fileDirPath in natsorted(zipObj.namelist()):
+                if fileDirPath.lower().endswith(image_ext):
+                    try:
+                        image_pil = Image.open(zipObj.open(fileDirPath))
+                        image_pil = image_pil.convert('RGB')
+                        imageList.append(image_pil)
+                    except Exception as e:
+                        # Close archieve file
+                        zipObj.close()
+                        new_zipObj.close()
+
+                        if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
+                            os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
+
+                        with logging_redirect_tqdm():
+                            self.logger.error("{}: {}".format(filePath, e))
+                        return
+
+            if len(imageList) > 0:
+
+                # If it is manhwa, combine all image vertically and slice in specific height
+                if isManhwa:
+                    combined_image = Image.new(
+                        'RGB', (combined_image_width, combined_image_height))
+                    y_offset = 0
+                    for image_pil in imageList:
+                        w, h = image_pil.size
+
+                        # Ensure that all images have same width
+                        if w == combined_image_width:
+                            combined_image.paste(image_pil, (0, y_offset))
+                            y_offset += h
+                        else:
+                            image_pil = image_pil.resize(
+                                (combined_image_width, int(h * (combined_image_width/w))))
+                            w, h = image_pil.size
+                            combined_image.paste(image_pil, (0, y_offset))
+                            y_offset += h
+
+                    # Crop each section to specific height
+                    slices = int(math.ceil(combined_image_height/image_size[1]))
+                    count = 1
+                    y = 0
+                    crop_images = []
+                    for _ in range(slices):
+                        # if we are at the end, set the lower bound to be the bottom of the image
+                        if count == slices:
+                            lower = combined_image_height
+                        else:
+                            lower = int(count * image_size[1])
+
+                        bbox = (0, y, combined_image_width, lower)
+                        crop_image = combined_image.crop(bbox)
+                        crop_images.append(crop_image)
+                        y += image_size[1]
+                        count += 1
+
+                    for index, crop_image in enumerate(tqdm(crop_images, leave=False, desc='Archieve Images Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')):
+                        image_byte = io.BytesIO()
+                        crop_image.save(image_byte, "webp", quality=100)
+                        new_zipObj.writestr(
+                            str(index+1) + ".webp", image_byte.getvalue())
+                else:
+                    for index, image_pil in enumerate(tqdm(imageList, leave=False, desc='Archieve Images Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')):
+                        image_pil.thumbnail(image_size)
+                        image_byte = io.BytesIO()
+                        image_pil.save(image_byte, "webp", quality=100)
+                        new_zipObj.writestr(
+                            str(index+1) + ".webp", image_byte.getvalue())
             else:
                 with logging_redirect_tqdm():
-                    self.logger.error("{}: File not exist".format(filePath))
+                    self.logger.error(
+                        "{}: Can not find image file in archieve.".format(filePath))
                 return
+
+            # Close archieve, so it can delete/move file
+            zipObj.close()
+            new_zipObj.close()
 
             # Check if file exist
             if name + ".cbz" not in os.listdir(dirPath):
+
+                # Remove original file
+                if os.path.exists(filePath):
+                    # Remove old file
+                    os.remove(filePath)
+                else:
+                    with logging_redirect_tqdm():
+                        self.logger.error("{}: Cannot remove the file, file not exist".format(filePath))
+                    return
+
                 # Move file from temp folder
                 shutil.move(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)),
                             os.path.join(dirPath, name + ".cbz"))
                 return
             else:
                 with logging_redirect_tqdm():
-                    self.logger.error("{}: File already exist".format(
-                        os.path.join(dirPath, name + ".zip")))
+                    self.logger.error("{}: CBZ File already exist".format(filePath))
                 return
         else:
-            # Remove temp file
-            if os.path.exists(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime))):
-                os.remove(os.path.join(temp_dirPath, "temp {}.zip".format(self.session_datetime)))
+            # Close archieve
+            zipObj.close()
+            
             return
 
     def cleanFile(self, filePath):
