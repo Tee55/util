@@ -2,44 +2,8 @@ from ast import For
 import sys
 from PyQt5.QtWidgets import *
 import os
-from module.compressor import Compressor
 from module.formatter import Formatter
 from module.updater import Updater
-    
-class CompressorPage(QWidget):
-    def __init__(self):
-        super().__init__()
-        layout = QVBoxLayout(self)
-        
-        self.textbox_sourcePath = QLineEdit(self)
-        self.textbox_sourcePath.setReadOnly(True)
-        
-        self.btn_sourcePath = QPushButton("Select Source Folder")
-        self.btn_sourcePath.clicked.connect(self.openSourcePath)
-        
-        self.btn_getstart = QPushButton("Get Start")
-        self.btn_getstart.clicked.connect(self.get_start)
-        
-        layout.addWidget(self.textbox_sourcePath)
-        layout.addWidget(self.btn_sourcePath)
-        layout.addWidget(self.btn_getstart)
-        
-        self.error_dialog = QErrorMessage()
-        
-    def get_start(self):
-        compressor = Compressor()
-        if os.path.basename(self.sourcePath) in ["r18", "norm"]:
-            compressor.run(self.sourcePath)
-        else:
-            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(self.sourcePath))
-        
-    def openSourcePath(self):
-        self.sourcePath = QFileDialog.getExistingDirectory(self, "Select Directory")
-        
-        if self.sourcePath:
-            self.textbox_sourcePath.setText(self.sourcePath)
-        else:    
-            self.error_dialog.showMessage('No directory select.')
         
 class FormatterPage(QWidget):
     def __init__(self):
@@ -57,17 +21,23 @@ class FormatterPage(QWidget):
         
         self.btn_getstart = QPushButton("Get Start")
         self.btn_getstart.clicked.connect(self.get_start)
+
+        self.progressBar = QProgressBar(self)
+        self.progressBar.setMaximum(100)
         
         layout.addWidget(self.combobox)
         layout.addWidget(self.textbox_sourcePath)
         layout.addWidget(self.btn_sourcePath)
         layout.addWidget(self.btn_getstart)
+        layout.addWidget(self.progressBar)
         
         self.error_dialog = QErrorMessage()
          
     def get_start(self):
         formatter = Formatter()
         if self.combobox.currentText() == "content":
+
+            print("here")
             if os.path.basename(self.sourcePath) in ["r18", "norm"]:
                 formatter.clean(self.sourcePath)
             else:
@@ -162,17 +132,14 @@ class MainWindow(QWidget):
     
     def initUI(self):
         self.leftlist = QListWidget()
-        self.leftlist.insertItem (0, 'Compressor' )
-        self.leftlist.insertItem (1, 'Formatter' )
-        self.leftlist.insertItem (2, 'Updater' )
+        self.leftlist.insertItem (0, 'Formatter' )
+        self.leftlist.insertItem (1, 'Updater' )
         self.leftlist.currentRowChanged.connect(self.display)
         
         
         self.stack = QStackedWidget(self)
-        compressorPage = CompressorPage()
         formatterPage = FormatterPage()
         updaterPage = UpdaterPage()
-        self.stack.addWidget(compressorPage)
         self.stack.addWidget(formatterPage)
         self.stack.addWidget(updaterPage)
         
