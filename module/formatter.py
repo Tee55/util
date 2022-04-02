@@ -213,8 +213,7 @@ class Formatter:
                 elif zipItem_name != "1":
                     isWrite = True
 
-                if not isWrite:
-                    break
+                break
 
         if isWrite and len(imageList) != 0:
             if not isManhwa:
