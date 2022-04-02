@@ -135,20 +135,22 @@ class Formatter:
     def sep_author_name(self, name):
 
         # Get text inside []
-        author = name[name.find("[")+1:name.find("]")]
+        if name.find("[") >= 0 and name.find("]") >= 0:
+            author = name[name.find("[")+1:name.find("]")]
 
-        # Get text inside ()
-        author = author[author.find("(")+1:author.find(")")]
+            # Get text inside ()
+            if author.find("(") >= 0 and author.find(")") >= 0:
+                author = author[author.find("(")+1:author.find(")")]
 
-        # Text after ] is item name
-        item_name = name[name.find("]")+1:]
-        if author != "" and item_name != "":
-            # Get cleaned author name
-            author_output = self.cleanName(author, isAuthor=True)
+            # Text after ] is item name
+            item_name = name[name.find("]")+1:]
+            if author != "" and item_name != "":
+                # Get cleaned author name
+                author_output = self.cleanName(author, isAuthor=True)
 
-            # Get cleaned item name
-            item_name = self.cleanName(item_name)
-            return author_output, item_name
+                # Get cleaned item name
+                item_name = self.cleanName(item_name)
+                return author_output, item_name
         else:
             # Get cleaned item name
             name_output = self.cleanName(name)
