@@ -1,7 +1,4 @@
 from argparse import ArgumentParser
-from ast import arg
-
-from numpy import source
 from module.formatter import Formatter
 from module.updater import Updater
 import os
