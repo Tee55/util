@@ -50,6 +50,20 @@ class Formatter:
         # Remove head and tail whitespaces
         name = name.strip()
 
+        # Remove [...], (...), {...}
+        if name.find("[") >= 0 and name.find("]") >= 0:
+            name = name[:name.find("[")] + name[name.find("]")+1:]
+
+        if name.find("(") >= 0 and name.find(")") >= 0:
+
+            # Window multiple renaming check
+            text_inside = name[name.find("(")+1:name.find(")")]
+            if not text_inside.isnumeric():
+                name = name[:name.find("(")] + name[name.find(")")+1:]
+
+        if name.find("{") >= 0 and name.find("}") >= 0:
+            name = name[:name.find("{")] + name[name.find("}")+1:]
+
         # Slugify
         name_output = slugify(name, separator=" ", allow_unicode=True)
 
