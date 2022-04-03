@@ -1,4 +1,7 @@
 from argparse import ArgumentParser
+from ast import arg
+
+from numpy import source
 from module.formatter import Formatter
 from module.updater import Updater
 import os
@@ -20,15 +23,26 @@ if __name__ == '__main__':
         '-t', '-type', '--type', default="content", choices=['author', 'content', "category", "collection"],
         help='Choose what kind of folder you want to run'
     )
+    parser.add_argument(
+        '-source', '--source', default="",
+        help='Choose source folder'
+    )
+    parser.add_argument(
+        '-target', '--target', default="",
+        help='Choose target folder'
+    )
     args = parser.parse_args()
     
     if args.module == "formatter":
         
-        root = tk.Tk()
-        root.call('tk', 'scaling', 4.0)
-        sourcePath = filedialog.askdirectory()
+        if args.source != "":
+            sourcePath = args.source
+        else:
+            tk = tk.Tk()
+            sourcePath = filedialog.askdirectory()
+            tk.destroy()
+
         print("Select source dir path: {}".format(sourcePath))
-        root.destroy()
 
         formatter = Formatter()
         
@@ -65,17 +79,22 @@ if __name__ == '__main__':
             
     elif args.module == "updater":
         
-        tk = tk.Tk()
-        sourcePath = filedialog.askdirectory()
+        if args.source != "" and args.target != "":
+            sourcePath = args.source
+            targetPath = args.target
+        else:
+            tk = tk.Tk()
+            sourcePath = filedialog.askdirectory()
+            targetPath = filedialog.askdirectory()
+            tk.destroy()
+
         print("Select source dir path: {}".format(sourcePath))
-            
-        targetPath = filedialog.askdirectory()
         print("Select dir path you want to update: {}".format(targetPath))
-        tk.destroy()
+
+        updater = Updater()
         
         if os.path.basename(sourcePath) in ["r18", "norm"]:
             if os.path.basename(targetPath) in ["r18", "norm"]:
-                updater = Updater()
                 updater.run(sourcePath, targetPath)
             else:
                 print("{}: TARGET_FOLDER is not CONTENT_FOLDER".format(sourcePath))
