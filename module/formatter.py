@@ -1,4 +1,4 @@
-from module.general import image_ext, subtitle_ext, video_ext, image_size, temp_dirPath
+from util.module.general import image_ext, subtitle_ext, video_ext, image_size, temp_dirPath
 import shutil
 from tqdm import tqdm
 import os
