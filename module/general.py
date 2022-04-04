@@ -1,8 +1,10 @@
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
 image_ext = ('.jpg', '.png', '.webp', '.jpeg')
 video_ext = ('.mp4', '.avi', '.mkv')
+exclude_ext = ('.csv', '.gitignore', '.ini')
 subtitle_ext = ('.srt', '.ass')
 image_size = (1024, 1024)
+thumbnail_size = (500, 500)
 temp_dirPath = "./temp/"
 leftkeys = (81, 110, 65361, 2424832)
 rightkeys = (83, 109, 65363, 2555904)
