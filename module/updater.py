@@ -18,8 +18,11 @@ class Updater:
     def __init__(self):
 
         # Truncate the log file
-        with open(os.path.join(temp_dirPath, "error.log"), 'w'):
-            pass
+        if not os.path.exists(temp_dirPath):
+            os.mkdir(temp_dirPath)
+            
+        f = open(os.path.join(temp_dirPath, "error.log"), 'w+')
+        f.close()
 
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="a")

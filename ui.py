@@ -1,11 +1,15 @@
 import sys
 from PyQt5.QtWidgets import *
 import os
+from module.formatter import Formatter
+from module.updater import Updater
         
 class FormatterPage(QWidget):
-    def __init__(self):
+    def __init__(self, plainTextEdit):
         super().__init__()
         layout = QVBoxLayout(self)
+
+        self.plainTextEdit = plainTextEdit
         
         self.combobox = QComboBox()
         self.combobox.addItems(["content", "author", "category", "collection"])
@@ -18,24 +22,36 @@ class FormatterPage(QWidget):
         
         self.btn_getstart = QPushButton("Get Start")
         self.btn_getstart.clicked.connect(self.get_start)
-
-        self.lineEdit = QLineEdit()
         
         layout.addWidget(self.combobox)
         layout.addWidget(self.textbox_sourcePath)
         layout.addWidget(self.btn_sourcePath)
         layout.addWidget(self.btn_getstart)
-        layout.addWidget(self.lineEdit)
         
         self.error_dialog = QErrorMessage()
          
     def get_start(self):
 
-        command = ['python', 'main.py', '-m', 'formatter', '-t', self.combobox.currentText(), '--source', self.sourcePath]
-        command = " ".join(command)
-
-        output = os.popen(command).read()
-        self.lineEdit.setText(output)
+        formatter = Formatter()
+        if self.combobox.currentText() == "content":
+            if os.path.basename(self.sourcePath) in ["r18", "norm"]:
+                formatter.clean(self.sourcePath)
+            else:
+                print("{}: This is not content folder.".format(self.sourcePath))
+        elif self.combobox.currentText() == "author":
+            if os.path.basename(self.sourcePath) not in ["r18", "norm"]:
+                author = os.path.basename(self.sourcePath)
+                formatter.cleanRecur(author, self.sourcePath, isChapter=False)
+        elif self.combobox.currentText() == "category":
+            for content_folder in os.listdir(self.sourcePath):
+                if content_folder in ["r18", "norm"]:
+                    formatter.clean(os.path.join(self.sourcePath, content_folder))
+        elif self.combobox.currentText() == "collection":
+            for category_folder in os.listdir(self.sourcePath):
+                if os.path.isdir(os.path.join(self.sourcePath, category_folder)):
+                    for content_folder in os.listdir(os.path.join(self.sourcePath, category_folder)):
+                        if content_folder in ["r18", "norm"]:
+                            formatter.clean(os.path.join(self.sourcePath, category_folder, content_folder))
         
     def openSourcePath(self):
         self.sourcePath = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -47,9 +63,11 @@ class FormatterPage(QWidget):
             
         
 class UpdaterPage(QWidget):
-    def __init__(self):
+    def __init__(self, plainTextEdit):
         super().__init__()
         layout = QVBoxLayout(self)
+
+        self.plainTextEdit = plainTextEdit
         
         self.textbox_sourcePath = QLineEdit(self)
         self.textbox_sourcePath.setReadOnly(True)
@@ -66,8 +84,6 @@ class UpdaterPage(QWidget):
         self.btn_getstart = QPushButton("Get Start")
         self.btn_getstart.clicked.connect(self.get_start)
 
-        self.lineEdit = QLineEdit()
-        
         layout.addWidget(self.textbox_sourcePath)
         layout.addWidget(self.btn_sourcePath)
         
@@ -75,16 +91,19 @@ class UpdaterPage(QWidget):
         layout.addWidget(self.btn_targetPath)
         
         layout.addWidget(self.btn_getstart)
-        layout.addWidget(self.lineEdit)
         
         self.error_dialog = QErrorMessage()
         
     def get_start(self):
-        command = ['python', 'main.py', '-m', 'updater', '--source', self.sourcePath, '--target', self.targetPath]
-        command = " ".join(command)
-
-        output = os.popen(command).read()
-        self.lineEdit.setText(output)
+        updater = Updater()
+        if os.path.basename(self.sourcePath) in ["r18", "norm"]:
+            if os.path.basename(self.targetPath) in ["r18", "norm"]:
+                updater = Updater()
+                updater.run(self.sourcePath, self.targetPath)
+            else:
+                print("{}: TARGET_FOLDER is not CONTENT_FOLDER".format(self.sourcePath))
+        else:
+            print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(self.sourcePath))
         
     def openSourcePath(self):
         self.sourcePath = QFileDialog.getExistingDirectory(self, "Select Directory")
@@ -107,24 +126,30 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Utility")
+        self.plainTextEdit = QPlainTextEdit()
         self.initUI()
+        
     
     def initUI(self):
-        self.leftlist = QListWidget()
-        self.leftlist.insertItem (0, 'Formatter' )
-        self.leftlist.insertItem (1, 'Updater' )
-        self.leftlist.currentRowChanged.connect(self.display)
-        
+        self.combobox = QComboBox()
+        self.combobox.addItems(["Formatter", "Updater"])
+        self.combobox.currentIndexChanged.connect(self.display)
         
         self.stack = QStackedWidget(self)
-        formatterPage = FormatterPage()
-        updaterPage = UpdaterPage()
+        formatterPage = FormatterPage(self.plainTextEdit)
+        updaterPage = UpdaterPage(self.plainTextEdit)
         self.stack.addWidget(formatterPage)
         self.stack.addWidget(updaterPage)
         
         mainPageLayout = QHBoxLayout(self)
-        mainPageLayout.addWidget(self.leftlist)
-        mainPageLayout.addWidget(self.stack)
+
+        mainPageLayout.addWidget(self.plainTextEdit)
+
+        leftSideLayout = QVBoxLayout()
+        leftSideLayout.addWidget(self.combobox)
+        leftSideLayout.addWidget(self.stack)
+
+        mainPageLayout.addLayout(leftSideLayout)
         
         self.setLayout(mainPageLayout)
         self.show()

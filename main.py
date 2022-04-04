@@ -97,3 +97,5 @@ if __name__ == '__main__':
                 print("{}: TARGET_FOLDER is not CONTENT_FOLDER".format(sourcePath))
         else:
             print("{}: SOURCE_FOLDER is not CONTENT_FOLDER".format(sourcePath))
+
+    print("======Finish======")

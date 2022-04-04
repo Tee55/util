@@ -27,11 +27,14 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 class Formatter:
 
-    def __init__(self, progressBar=None):
+    def __init__(self):
 
         # Truncate the log file
-        with open(os.path.join(temp_dirPath, "error.log"), 'w'):
-            pass
+        if not os.path.exists(temp_dirPath):
+            os.mkdir(temp_dirPath)
+
+        f = open(os.path.join(temp_dirPath, "error.log"), 'w+')
+        f.close()
 
         logging.basicConfig(filename=os.path.join(
             temp_dirPath, "error.log"), filemode="a")
@@ -119,7 +122,7 @@ class Formatter:
         return new_fileDir
 
     def clean(self, contentPath):
-
+        
         for old_author in tqdm(natsorted(os.listdir(contentPath)), desc='Content Folder Progress', bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}'):
 
             # Check if it is dir (author folder)
