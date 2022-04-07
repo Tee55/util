@@ -88,11 +88,15 @@ class Updater:
 
                 # Create author folder if not exist
                 if author not in os.listdir(targetPath):
-                    os.makedirs(os.path.join(targetPath, author))
-
-                # Move file
-                shutil.move(os.path.join(dirPath, new_filename),
-                            os.path.join(targetPath, author, new_filename))
+                    with logging_redirect_tqdm():
+                        self.logger.error(
+                            "{}: New author found.".format(author))
+                    continue
+                
+                else:
+                    # Move file
+                    shutil.move(os.path.join(dirPath, new_filename),
+                                os.path.join(targetPath, author, new_filename))
 
             elif old_filename.lower().endswith(zip_ext):
 
