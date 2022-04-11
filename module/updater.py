@@ -9,8 +9,13 @@ import zipfile
 import rarfile
 import tarfile
 
-from util.module.general import temp_dirPath, image_ext, zip_ext
-from util.module.formatter import Formatter
+try:
+    from util.module.general import temp_dirPath, image_ext, zip_ext
+    from util.module.formatter import Formatter
+except:
+    from module.general import temp_dirPath, image_ext, zip_ext
+    from module.formatter import Formatter
+
 
 formatter = Formatter()
 
