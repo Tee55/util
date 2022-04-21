@@ -373,7 +373,7 @@ class Formatter:
             image_pil = Image.open(filePath)
             image_pil = image_pil.convert('RGB')
             w, h = image_pil.size
-            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
+            if not filePath.lower().endswith(('.webp')):
 
                 # Resize ratio image
                 image_pil.thumbnail(image_size)
