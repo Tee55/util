@@ -373,29 +373,47 @@ class Formatter:
             image_pil = Image.open(filePath)
             image_pil = image_pil.convert('RGB')
             w, h = image_pil.size
-            if not filePath.lower().endswith('.webp'):
+            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
 
                 # Resize ratio image
                 image_pil.thumbnail(image_size)
 
+
                 if filename != name + ".webp":
-                    new_filename = self.renameRecur(dirPath, filename, name + ".webp")
 
                     # Check if .webp exist or not
-                    if new_filename not in os.listdir(dirPath):
+                    if name + ".webp" not in os.listdir(dirPath):
                         image_pil.save(os.path.join(
-                            dirPath, new_filename), "webp", quality=100)
-                        # Remove old file
-                        if os.path.exists(filePath):
-                            os.remove(filePath)
+                            dirPath, name + ".webp"), "webp", quality=100)
+                    else:
+                        suffix = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+                        time.sleep(1)
+                        name = " ".join([name, suffix])
+
+                        if name + ".webp" not in os.listdir(dirPath):
+                            image_pil.save(os.path.join(
+                                dirPath, name + ".webp"), "webp", quality=100)
+                        else:
+                            with logging_redirect_tqdm():
+                                self.logger.error(
+                                    "{}: Cannot save in webp.".format(filePath))
+                            return
+
+                    # Remove old file
+                    if os.path.exists(filePath):
+                        os.remove(filePath)
+
+                return
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
 
                 # Resize ratio image
                 image_pil.thumbnail(image_size)
 
+                # Rename file
+                new_filename = self.renameRecur(dirPath, filename, name + ".webp")
+
                 # Override old .webp
-                image_pil.save(os.path.join(dirPath, name +
-                               ".webp"), "webp", quality=100)
+                image_pil.save(os.path.join(dirPath, new_filename), "webp", quality=100)
             return
         elif filePath.lower().endswith(".gif"):
             image_pil = Image.open(filePath)
