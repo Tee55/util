@@ -1,5 +1,5 @@
 zip_ext = ('.zip', '.rar', '.cbz', '.cbr')
-image_ext = ('.jpg', '.png', '.webp', '.jpeg')
+image_ext = ('.jpg', '.png', '.webp', '.jpeg', '.jpe')
 video_ext = ('.mp4', '.avi', '.mkv')
 exclude_ext = ('.csv', '.gitignore', '.ini')
 subtitle_ext = ('.srt', '.ass')

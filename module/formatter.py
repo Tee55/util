@@ -373,23 +373,21 @@ class Formatter:
             image_pil = Image.open(filePath)
             image_pil = image_pil.convert('RGB')
             w, h = image_pil.size
-            if filePath.lower().endswith(('.jpg', '.png', '.jpeg')):
+            if not filePath.lower().endswith('.webp'):
 
                 # Resize ratio image
                 image_pil.thumbnail(image_size)
 
-                # Check if .webp exist or not
-                if name + ".webp" not in os.listdir(dirPath):
-                    image_pil.save(os.path.join(
-                        dirPath, name + ".webp"), "webp", quality=100)
-                    # Remove old file
-                    if os.path.exists(filePath):
-                        os.remove(filePath)
-                else:
-                    with logging_redirect_tqdm():
-                        self.logger.error(
-                            "{}: There is already .webp file, please check.".format(filePath))
-                    return
+                if filename != name + ".webp":
+                    new_filename = self.renameRecur(dirPath, filename, name + ".webp")
+
+                    # Check if .webp exist or not
+                    if new_filename not in os.listdir(dirPath):
+                        image_pil.save(os.path.join(
+                            dirPath, new_filename), "webp", quality=100)
+                        # Remove old file
+                        if os.path.exists(filePath):
+                            os.remove(filePath)
             elif filePath.lower().endswith('.webp') and w > 1024 and h > 1024:
 
                 # Resize ratio image
