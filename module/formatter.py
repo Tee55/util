@@ -21,6 +21,7 @@ import logging
 import enzyme
 import ffpb
 from tqdm.contrib.logging import logging_redirect_tqdm
+from difPy import dif
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -688,3 +689,8 @@ class Formatter:
                     self.logger.error(
                         "{}: Can not find chapter item".format(author_path))
                 return
+        elif isChapter and isImageFolder:
+
+            # Remove duplicate images
+            search = dif(author_path, delete=True, silent_del=True)
+            return
