@@ -578,21 +578,25 @@ class Formatter:
     def cleanRecur(self, author, author_path, isChapter=False):
 
         if isChapter:
+
+            isThumbnail = False
+            isImageFolder = False
+            isVideoFolder = False
+
             # Check if there is only one image in folder
             # Only one image in Chapter Folder mean it is thumbnail
             imageList = [chapFile for chapFile in os.listdir(
                 author_path) if chapFile.lower().endswith(image_ext)]
-            if len(os.listdir(author_path)) >= 1 and len(imageList) == 1:
-                # This folder contain thumbnail image
-                isThumbnail = True
-                isImageFolder = False
-            elif len(imageList) == len(os.listdir(author_path)):
-                isThumbnail = False
+            videoList = [chapFile for chapFile in os.listdir(
+                author_path) if chapFile.lower().endswith(video_ext)]
+
+            if len(imageList) > 1:
                 isImageFolder = True
-            else:
-                # This folder does not contain thumbnail image
-                isThumbnail = False
-                isImageFolder = False
+            elif len(imageList) == 1:
+                isThumbnail = True
+
+            if len(videoList) >= 1:
+                isVideoFolder = True
 
         tqdm_progress = tqdm(natsorted(os.listdir(author_path)), leave=False,
                              bar_format='{desc}: {percentage:3.0f}%|{bar:10}| {n_fmt}/{total_fmt}')
@@ -681,6 +685,11 @@ class Formatter:
 
         # Check if all chapter complete (Not include special chapter)
         if isChapter and not isImageFolder:
+
+            if not isThumbnail:
+                with logging_redirect_tqdm():
+                    self.logger.error("{}: Thumbnail is missing.".format(author_path))
+
             if len(chapters_index_list) != 0:
                 missing_chapter = []
                 for index in range(1, natsorted(chapters_index_list)[-1]+1):
