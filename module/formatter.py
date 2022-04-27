@@ -22,6 +22,7 @@ import enzyme
 import ffpb
 from tqdm.contrib.logging import logging_redirect_tqdm
 from difPy import dif
+import subprocess
 
 from PIL import Image, ImageFile, ImageSequence
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -52,6 +53,13 @@ class Formatter:
             for filename in os.listdir(temp_dirPath):
                 if os.path.isfile(os.path.join(temp_dirPath, filename)) and filename.startswith('temp'):
                     os.remove(os.path.join(temp_dirPath, filename))
+
+        try:
+            subprocess.check_output(['ffmpeg', '-version'])
+        except Exception as e:
+            with logging_redirect_tqdm():
+                self.logger.error("{}: The ffmpeg is not available".format(e))
+        
 
     def cleanName(self, name, isAuthor=False):
 
