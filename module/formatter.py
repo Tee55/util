@@ -686,7 +686,7 @@ class Formatter:
         # Check if all chapter complete (Not include special chapter)
         if isChapter and not isImageFolder:
 
-            if not isThumbnail:
+            if not isThumbnail and isVideoFolder:
                 with logging_redirect_tqdm():
                     self.logger.error("{}: Thumbnail is missing.".format(author_path))
 
