@@ -225,8 +225,6 @@ class Formatter:
                 if w > 1024 and h > 1024 and h < 3*w:
                     isWrite = True
                 elif h > 1024 and h >= 3*w:
-                    combined_image_width = w
-                    combined_image_height += h
                     isWrite = True
                     isManhwa = True
                 elif zipItem_filename.lower().endswith(('.jpg', '.png', '.jpeg')):
@@ -252,6 +250,9 @@ class Formatter:
                     try:
                         image_pil = Image.open(zipObj.open(fileDirPath))
                         image_pil = image_pil.convert('RGB')
+                        w, h = image_pil.size
+                        combined_image_width = w
+                        combined_image_height += h
                         imageList.append(image_pil)
                     except Exception as e:
                         # Close archieve file
