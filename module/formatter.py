@@ -644,7 +644,7 @@ class Formatter:
                     # Chapter's Folder name + chapter indicator
                     new_name = " ".join(
                         [os.path.basename(author_path), match[-1].lstrip('0')])
-                    chapters_index_list.append(int(match[-1]))
+                    chapters_index_list.append(int(match[-1].lstrip('0')))
                 else:
                     with logging_redirect_tqdm():
                         self.logger.error("{}: Can not find chapter indicate pattern, please check.".format(
