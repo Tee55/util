@@ -641,10 +641,15 @@ class Formatter:
                     # normal chapter like 2, 3, 4
                     match = re.findall(r'\d{1,3}$', new_name)
 
+                    if match[-1] != "0":
+                        indicator = match[-1].lstrip('0')
+                    else:
+                        indicator = match[-1]
+
                     # Chapter's Folder name + chapter indicator
                     new_name = " ".join(
-                        [os.path.basename(author_path), match[-1].lstrip('0')])
-                    chapters_index_list.append(int(match[-1].lstrip('0')))
+                        [os.path.basename(author_path), indicator])
+                    chapters_index_list.append(int(indicator))
                 else:
                     with logging_redirect_tqdm():
                         self.logger.error("{}: Can not find chapter indicate pattern, please check.".format(
