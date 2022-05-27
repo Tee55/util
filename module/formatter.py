@@ -636,7 +636,7 @@ class Formatter:
 
                     # Chapter's Folder name + chapter indicator
                     new_name = " ".join(
-                        [os.path.basename(author_path), match[-1].lstrip('0')])
+                        [os.path.basename(author_path), match[-1]])
                 elif re.search(r'\d{1,3}$', new_name):
                     # normal chapter like 2, 3, 4
                     match = re.findall(r'\d{1,3}$', new_name)
