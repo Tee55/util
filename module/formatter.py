@@ -443,7 +443,7 @@ class Formatter:
 
                 # Override old .gif
                 image_pil.save(os.path.join(dirPath, name + ".gif"),
-                               save_all=True, append_images=list(frames))
+                               save_all=True, append_images=list(frames), quality=100)
             return
         elif filePath.lower().endswith(subtitle_ext):
             # Subtitle File
