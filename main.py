@@ -28,6 +28,10 @@ if __name__ == '__main__':
         '-target', '--target', default="",
         help='Choose target folder'
     )
+    parser.add_argument(
+        '-difPy', '--difPy', default="y", choices=['y', 'n'],
+        help='Enable difPy or not (Remove duplicate images in folder)'
+    )
     args = parser.parse_args()
     
     if args.module == "formatter":
@@ -41,7 +45,7 @@ if __name__ == '__main__':
 
         print("Select source dir path: {}".format(sourcePath))
 
-        formatter = Formatter()
+        formatter = Formatter(args)
         
         if args.type == "content":
             if os.path.basename(sourcePath) in ["r18", "norm"]:

@@ -33,7 +33,7 @@ rarfile.UNRAR_TOOL = "UnRAR.exe"
 
 class Formatter:
 
-    def __init__(self):
+    def __init__(self, args=None):
 
         # Truncate the log file
         if not os.path.exists(temp_dirPath):
@@ -46,6 +46,7 @@ class Formatter:
             temp_dirPath, "error.log"), filemode="a")
         self.logger = logging.getLogger()
         self.session_datetime = datetime.datetime.now().strftime("%y%m%d %H%M%S")
+        self.args = args
 
         if not os.path.exists(temp_dirPath):
             os.mkdir(temp_dirPath)
@@ -715,5 +716,7 @@ class Formatter:
         elif isChapter and isImageFolder:
 
             # Remove duplicate images
-            search = dif(author_path, delete=True, silent_del=True)
+            if self.args.difPy == "y":
+                search = dif(author_path, similarity="normal", delete=True, silent_del=True)
+
             return
