@@ -594,6 +594,7 @@ class Formatter:
 
             if len(imageList) > 1:
                 isImageFolder = True
+
             elif len(imageList) == 1:
                 isThumbnail = True
 
@@ -625,8 +626,19 @@ class Formatter:
                 new_name = "[" + author + "] " + "thumbnail"
             elif isChapter and isImageFolder:
                 # Image Folder item rename
-                new_name = " ".join(
-                    [os.path.basename(author_path), str(index+1)])
+                if re.search(r'\d{1,4}$', new_name): 
+                    match = re.findall(r'\d{1,4}$', new_name)
+                    if match[-1] != "0":
+                        indicator = match[-1].lstrip('0')
+                    else:
+                        indicator = match[-1]
+
+                    new_name = " ".join(
+                        [os.path.basename(author_path), str(indicator)])
+                else:
+                    new_name = " ".join(
+                        [os.path.basename(author_path), str(len(imageList) + index)])
+
             elif isChapter:
                 # General File in chapter folder
 
