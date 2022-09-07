@@ -626,15 +626,22 @@ class Formatter:
                 new_name = "[" + author + "] " + "thumbnail"
             elif isChapter and isImageFolder:
                 # Image Folder item rename
-                if re.search(r'\d{1,4}$', new_name): 
-                    match = re.findall(r'\d{1,4}$', new_name)
+                if re.search(r'\d{1,4}[a-z]$', new_name):
+                    match = re.findall(r'\d{1,4}[a-z]$', new_name)
+
+                    new_name = " ".join(
+                        [os.path.basename(author_path), match[-1]])
+                
+                elif re.search(r'\d{1,4}$', new_name):
+                    match = re.findall(r'\d{1,3}$', new_name)
+
                     if match[-1] != "0":
                         indicator = match[-1].lstrip('0')
                     else:
                         indicator = match[-1]
 
                     new_name = " ".join(
-                        [os.path.basename(author_path), str(indicator)])
+                        [os.path.basename(author_path), indicator])
                 else:
                     new_name = " ".join(
                         [os.path.basename(author_path), str(len(imageList) + index)])
