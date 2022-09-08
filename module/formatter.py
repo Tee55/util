@@ -633,7 +633,7 @@ class Formatter:
                         [os.path.basename(author_path), match[-1]])
                 
                 elif re.search(r'\d{1,4}$', new_name):
-                    match = re.findall(r'\d{1,3}$', new_name)
+                    match = re.findall(r'\d{1,4}$', new_name)
 
                     if match[-1] != "0":
                         indicator = match[-1].lstrip('0')
