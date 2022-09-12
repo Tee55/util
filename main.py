@@ -29,7 +29,7 @@ if __name__ == '__main__':
         help='Choose target folder'
     )
     parser.add_argument(
-        '-difPy', '--difPy', default="y", choices=['y', 'n'],
+        '-difPy', '--difPy', default="n", choices=['y', 'n'],
         help='Enable difPy or not (Remove duplicate images in folder)'
     )
     args = parser.parse_args()
