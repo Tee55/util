@@ -21,7 +21,7 @@ import logging
 import enzyme
 import ffpb
 from tqdm.contrib.logging import logging_redirect_tqdm
-from difPy import dif
+#from difPy import dif
 import subprocess
 
 from PIL import Image, ImageFile, ImageSequence
@@ -736,6 +736,7 @@ class Formatter:
 
             # Remove duplicate images
             if self.args.difPy == "y":
-                search = dif(author_path, similarity="normal", delete=True, silent_del=True)
+                #search = dif(author_path, similarity="normal", delete=True, silent_del=True)
+                pass
 
             return
