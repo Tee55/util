@@ -25,6 +25,7 @@ from tqdm.contrib.logging import logging_redirect_tqdm
 import subprocess
 
 from PIL import Image, ImageFile, ImageSequence
+import pillow_avif
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS = None
 
