@@ -236,7 +236,7 @@ class Formatter:
                 elif zipItem_name != str(image_count):
                     isWrite = True
 
-                if isWrite or image_count >= image_check:
+                if isWrite and image_count >= image_check:
                     break
 
         if isWrite:
@@ -278,6 +278,10 @@ class Formatter:
                     y_offset = 0
                     for image_pil in imageList:
                         w, h = image_pil.size
+
+                        # Skip if image is too small
+                        if h <= w * 2:
+                            continue
 
                         # Ensure that all images have same width
                         if w == combined_image_width:
